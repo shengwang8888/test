@@ -70,7 +70,7 @@ void CGPAnalysisView::OnDraw(CDC* pDC)
 	GetClientRect( &rcView );
 	memDC.GetDC().FillSolidRect( &rcView, 0 );
 	
-	for( i=0; i<10000; i++ )
+	for( i=0; i<rcView.Width()*rcView.Height()/4; i++ )
 		memDC.GetDC().SetPixel( rand()%rcView.Width(), rand()%rcView.Height(), RGB(255,0,0) );
 
 	
@@ -160,7 +160,9 @@ void CGPAnalysisView::OnFileOpen()
 LRESULT CGPAnalysisView::OnAnalysisSingleGP(WPARAM wParam, LPARAM lParam)
 {
 	CString *pStr = (CString *)wParam;
-	AfxMessageBox("Msg detected:" );
+	AfxMessageBox((CString)"Msg detected:\n" + *pStr );
+
+	CGPAnalysisDoc *pDoc = GetDocument();
 
 	return 0;
 }

@@ -131,6 +131,7 @@
     <ClInclude Include="GPAnalysis.h" />
     <ClInclude Include="GPAnalysisDoc.h" />
     <ClInclude Include="GPAnalysisView.h" />
+    <ClInclude Include="GPMgr.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="OutputWnd.h" />
     <ClInclude Include="PropertiesWnd.h" />
@@ -146,6 +147,7 @@
     <ClCompile Include="GPAnalysis.cpp" />
     <ClCompile Include="GPAnalysisDoc.cpp" />
     <ClCompile Include="GPAnalysisView.cpp" />
+    <ClCompile Include="GPMgr.cpp" />
     <ClCompile Include="MainFrm.cpp" />
     <ClCompile Include="OutputWnd.cpp" />
     <ClCompile Include="PropertiesWnd.cpp" />
