@@ -13,6 +13,7 @@
 #include "GPAnalysisView.h"
 
 #include "MainFrm.h"
+#include "GPMgr.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -159,10 +160,11 @@ void CGPAnalysisView::OnFileOpen()
 
 LRESULT CGPAnalysisView::OnAnalysisSingleGP(WPARAM wParam, LPARAM lParam)
 {
-	CString *pStr = (CString *)wParam;
-	AfxMessageBox((CString)"Msg detected:\n" + *pStr );
+	CString *pGpFile = (CString *)wParam;
+	//AfxMessageBox((CString)"Msg detected:\n" + *pGpFile);
 
 	CGPAnalysisDoc *pDoc = GetDocument();
+	CGP *pGP = new CGP(pGpFile->GetString());
 
 	return 0;
 }
