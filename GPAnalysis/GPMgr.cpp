@@ -180,21 +180,15 @@ void CGPMgr::UI_Zoom(ZOOMMODE mode)
 	switch (mode)
 	{
 	case ZOOMRESET:
-		m_iCellWidth = 10;
+		m_iScale = 0;
 		break;
 	case ZOOMIN:
-		if (m_iCellWidth == 1)
-			m_iCellWidth = 2;
-		else
-			m_iCellWidth += 2;
+		m_iScale++;
 		break;
 	case ZOOMOUT:
-		m_iCellWidth -= 2;
-		if (m_iCellWidth <= 0) m_iCellWidth = 1;
+		m_iScale--;
 		break;
-
 	}
-
 }
 
 
@@ -219,7 +213,17 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd)
 	PDAILYINFO pDailyData = pGP->GetDailyInfoDate();
 	if (pDailyData == NULL) return;
 
-	int maxDay = rcGrain.Width() / m_iCellWidth;
+	int cell_overlap = 0;
+	int cell_W = m_iCellWidth + m_iScale * 2;
+	if (cell_W <= 0)
+	{
+		cell_W = 1;
+		cell_overlap = -(m_iCellWidth + m_iScale * 2) / 2;
+	}
+
+	int maxDay = rcGrain.Width() / cell_W;
+	if (cell_overlap > 0)
+		maxDay *= cell_overlap+1;
 
 	// Draw grain windows
 	PDAILYINFO pTmpDat = pDailyData;
@@ -245,16 +249,28 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd)
 	double hRatePrice = (double)(rcGrain.Height()) / (priceMax - priceMin);
 	double hRateAMount = (double)(rcAMount.Height()) / amountMax;
 	int dayCnt = 0;
+	int overlapCnt = 0;
 
-	pTmpDat = pDailyData;
+	//pTmpDat = pDailyData;
 	do
 	{
-		dayCnt++;
+		TRACE("cell_overlap=%d, overlapCnt=%d, dayCnt=%d\n", cell_overlap, overlapCnt, dayCnt);
 
-		pTmpDat = pTmpDat->day_prev;
-
-		int cell_X = rcGrain.right - dayCnt * m_iCellWidth;
+		int cell_X = rcGrain.left + dayCnt * cell_W;
 		if (cell_X < 0) break;
+
+		if (cell_overlap > 0)
+		{
+			if (overlapCnt == cell_overlap)
+			{
+				overlapCnt = 0;
+				dayCnt++;
+			}
+			else
+				overlapCnt++;
+		}
+		else
+			dayCnt++;
 
 		BOOL		bRising;
 		COLORREF	dayColor;
@@ -270,7 +286,7 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd)
 			rcTmp = CRect(
 				cell_X,
 				rcGrain.bottom - (int)((pTmpDat->price_close - priceMin)*hRatePrice),
-				cell_X + ((m_iCellWidth - 1) == 0 ? 1 : m_iCellWidth - 1),
+				cell_X + ((cell_W - 1) == 0 ? 1 : cell_W - 1),
 				rcGrain.bottom - (int)((pTmpDat->price_open - priceMin)*hRatePrice));
 		}
 		else if(pTmpDat->price_close < pTmpDat->price_open)
@@ -281,7 +297,7 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd)
 			rcTmp = CRect(
 				cell_X,
 				rcGrain.bottom - (int)((pTmpDat->price_open - priceMin)*hRatePrice),
-				cell_X + ((m_iCellWidth - 1) == 0 ? 1 : m_iCellWidth - 1),
+				cell_X + ((cell_W - 1) == 0 ? 1 : cell_W - 1),
 				rcGrain.bottom - (int)((pTmpDat->price_close - priceMin)*hRatePrice));
 		}
 		else
@@ -292,35 +308,35 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd)
 			rcTmp = CRect(
 				cell_X,
 				rcGrain.bottom - (int)((pTmpDat->price_close - priceMin)*hRatePrice),
-				cell_X + ((m_iCellWidth - 1) == 0 ? 1 : m_iCellWidth - 1),
+				cell_X + ((cell_W - 1) == 0 ? 1 : cell_W - 1),
 				rcGrain.bottom - (int)((pTmpDat->price_open - priceMin)*hRatePrice - 1));
 		}
 
-		if (m_iCellWidth <= 2)
+		if (cell_W <= 2)
 		{
 			pt1 = CPoint(cell_X, rcGrain.bottom - (int)((pTmpDat->price_max - priceMin)*hRatePrice));
 			pt2 = CPoint(cell_X, rcGrain.bottom - (int)((pTmpDat->price_min - priceMin)*hRatePrice));
 		}
 		else
 		{
-			pt1 = CPoint(cell_X + (m_iCellWidth - 1) / 2, rcGrain.bottom - (int)((pTmpDat->price_max - priceMin)*hRatePrice));
-			pt2 = CPoint(cell_X + (m_iCellWidth - 1) / 2, rcGrain.bottom - (int)((pTmpDat->price_min - priceMin)*hRatePrice));
+			pt1 = CPoint(cell_X + (cell_W - 1) / 2, rcGrain.bottom - (int)((pTmpDat->price_max - priceMin)*hRatePrice));
+			pt2 = CPoint(cell_X + (cell_W - 1) / 2, rcGrain.bottom - (int)((pTmpDat->price_min - priceMin)*hRatePrice));
 		}
 
 		// Draw grain
 		//drawLib.FillVarColorRect(pDC, rcTmp, 0x1, dayColor, dayColor, 0);
 		drawLib.DrawColorLine(pDC, pt1, pt2, dayColor);
 		if (bRising)
-			drawLib.FillVarColorRect(pDC, rcTmp, 0x5, dayColor, RGB(0, 0, 0), 0);
+			drawLib.FillVarColorRect(pDC, rcTmp, 0x1, dayColor, RGB(80, 0, 20), 0);
 		else
-			drawLib.FillVarColorRect(pDC, rcTmp, 0x5, dayColor, dayColor, 0);
+			drawLib.FillVarColorRect(pDC, rcTmp, 0x1, dayColor, RGB(50, 80, 80), 0);
 
 
 		// Draw amount
 		rcTmp = CRect(
 			cell_X,
 			rcAMount.bottom - (int)(pTmpDat->deal_amount*hRateAMount - 1),
-			cell_X + ((m_iCellWidth - 1) == 0 ? 1 : m_iCellWidth - 1),
+			cell_X + ((cell_W - 1) == 0 ? 1 : cell_W - 1),
 			rcAMount.bottom );
 
 		if (bRising)
@@ -328,14 +344,10 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd)
 		else
 			drawLib.FillVarColorRect(pDC, rcTmp, 0x5, dayColor, dayColor, 0);
 
+		pTmpDat = pTmpDat->day_next;
 
-	} while (pTmpDat != pDailyData);
+	} while (pTmpDat != pDailyData && pTmpDat != NULL );
 
 
-
-	//drawLib.DrawArrowBtn(pMDC, rcBtn, 0, 0, 0xffff, 0, 0xffff);
-	//drawLib.FillVarColorRect( &memDC.GetDC(), rcBtn, 0x1, RGB(150, 150, 150), RGB(150, 150, 150), 0);
-	//FillVarColorRect(pDC, rcZoom, 0x1, RGB(100, 100, 100), RGB(100, 100, 100), 0);
-	//drawLib.DrawColorLine(pMDC, pt1, pt2, RGB(255, 255, 255), PS_SOLID);
 }
 
