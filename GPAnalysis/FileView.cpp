@@ -151,7 +151,6 @@ void CFileView::FillFileView()
 	m_wndFileView.Expand(hRoot, TVE_EXPAND);
 
 
-
 	//HTREEITEM hRoot = m_wndFileView.InsertItem(_T("FakeApp files"), 0, 0);
 	//m_wndFileView.SetItemState(hRoot, TVIS_BOLD, TVIS_BOLD);
 

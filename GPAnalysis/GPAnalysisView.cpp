@@ -32,6 +32,7 @@ BEGIN_MESSAGE_MAP(CGPAnalysisView, CView)
 	ON_WM_RBUTTONUP()
 	ON_COMMAND(ID_FILE_OPEN, &CGPAnalysisView::OnFileOpen)
 	ON_MESSAGE(WM_USER_ANALYSIS_SINGLE, &CGPAnalysisView::OnAnalysisSingleGP)
+ON_WM_KEYDOWN()
 END_MESSAGE_MAP()
 
 // CGPAnalysisView construction/destruction
@@ -170,3 +171,24 @@ LRESULT CGPAnalysisView::OnAnalysisSingleGP(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
+
+void CGPAnalysisView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	switch (nChar)
+	{
+	case VK_LEFT:
+		break;
+	case VK_RIGHT:
+		break;
+	case VK_UP:
+		gpMgr.UI_Zoom(ZOOMIN);
+		break;
+	case VK_DOWN:
+		gpMgr.UI_Zoom(ZOOMOUT);
+		break;
+	}
+
+	Invalidate(0);
+
+	CView::OnKeyDown(nChar, nRepCnt, nFlags);
+}

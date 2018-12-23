@@ -46,6 +46,7 @@ protected:
 public:
 	afx_msg void OnFileOpen();
 	afx_msg LRESULT OnAnalysisSingleGP(WPARAM wParam, LPARAM lParam);
+	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 };
 
 #ifndef _DEBUG  // debug version in GPAnalysisView.cpp

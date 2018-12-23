@@ -165,6 +165,8 @@ DrawLib drawLib;
 
 CGPMgr::CGPMgr()
 {
+	m_iCellWidth = 10;
+	m_iCellHigh  = 30;
 }
 
 
@@ -173,28 +175,158 @@ CGPMgr::~CGPMgr()
 	CGP::ClearAll();
 }
 
+void CGPMgr::UI_Zoom(ZOOMMODE mode)
+{
+	switch (mode)
+	{
+	case ZOOMRESET:
+		m_iCellWidth = 10;
+		break;
+	case ZOOMIN:
+		if (m_iCellWidth == 1)
+			m_iCellWidth = 2;
+		else
+			m_iCellWidth += 2;
+		break;
+	case ZOOMOUT:
+		m_iCellWidth -= 2;
+		if (m_iCellWidth <= 0) m_iCellWidth = 1;
+		break;
+
+	}
+
+}
+
+
+
 void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd)
 {
 	CGP *pGP = CGP::GetGPLstHead();
 	if (pGP == NULL) return;
 
+	CRect rcGrain = rcMainWnd;
+	CRect rcAMount = rcMainWnd;
+
+	rcGrain.top = rcGrain.top + 20;
+	rcGrain.bottom = (LONG)(rcGrain.bottom *0.7);
+
+	rcAMount.top = rcGrain.bottom;
+
+	//pDC->Draw3dRect(rcGrain, RGB(255, 0, 0), RGB(255, 0, 0));
+
+
+
 	PDAILYINFO pDailyData = pGP->GetDailyInfoDate();
 	if (pDailyData == NULL) return;
 
-	int dayCnt = 0;
+	int maxDay = rcGrain.Width() / m_iCellWidth;
+
+	// Draw grain windows
 	PDAILYINFO pTmpDat = pDailyData;
+	int priceMin = 0x7fffffff;
+	int priceMax = 0;
+	int amountMax = 0;
+	for (int i = 0; i < maxDay; i++)
+	{
+		pTmpDat = pTmpDat->day_prev;
+
+		if (priceMin > pTmpDat->price_min)
+			priceMin = pTmpDat->price_min;
+		if (priceMax < pTmpDat->price_max)
+			priceMax = pTmpDat->price_max;
+
+		if (amountMax < pTmpDat->deal_amount)
+			amountMax = pTmpDat->deal_amount;
+
+		if (pTmpDat == pDailyData)
+			break;
+	}
+
+	double hRatePrice = (double)(rcGrain.Height()) / (priceMax - priceMin);
+	double hRateAMount = (double)(rcAMount.Height()) / amountMax;
+	int dayCnt = 0;
+
+	pTmpDat = pDailyData;
 	do
 	{
 		dayCnt++;
 
 		pTmpDat = pTmpDat->day_prev;
 
-		int xStart = rcMainWnd.right - dayCnt * 10;
-		if (xStart < 0) break;
+		int cell_X = rcGrain.right - dayCnt * m_iCellWidth;
+		if (cell_X < 0) break;
 
-		CRect      rcTmp(xStart, rcMainWnd.bottom-pTmpDat->price_max, xStart+8, rcMainWnd.bottom - pTmpDat->price_min);
+		BOOL		bRising;
+		COLORREF	dayColor;
+		CRect		rcTmp;
+		CPoint		pt1;
+		CPoint		pt2;
 
-		drawLib.FillVarColorRect(pDC, rcTmp, 0x1, RGB(255, 0, 0), RGB(255, 0, 0), 0);
+		if (pTmpDat->price_close > pTmpDat->price_open)
+		{
+			bRising  = TRUE;
+
+			dayColor = RGB(255, 0, 0);
+			rcTmp = CRect(
+				cell_X,
+				rcGrain.bottom - (int)((pTmpDat->price_close - priceMin)*hRatePrice),
+				cell_X + ((m_iCellWidth - 1) == 0 ? 1 : m_iCellWidth - 1),
+				rcGrain.bottom - (int)((pTmpDat->price_open - priceMin)*hRatePrice));
+		}
+		else if(pTmpDat->price_close < pTmpDat->price_open)
+		{
+			bRising = FALSE;
+
+			dayColor = RGB(84, 255, 255);
+			rcTmp = CRect(
+				cell_X,
+				rcGrain.bottom - (int)((pTmpDat->price_open - priceMin)*hRatePrice),
+				cell_X + ((m_iCellWidth - 1) == 0 ? 1 : m_iCellWidth - 1),
+				rcGrain.bottom - (int)((pTmpDat->price_close - priceMin)*hRatePrice));
+		}
+		else
+		{
+			bRising = TRUE;
+
+			dayColor = RGB(255, 50, 50);
+			rcTmp = CRect(
+				cell_X,
+				rcGrain.bottom - (int)((pTmpDat->price_close - priceMin)*hRatePrice),
+				cell_X + ((m_iCellWidth - 1) == 0 ? 1 : m_iCellWidth - 1),
+				rcGrain.bottom - (int)((pTmpDat->price_open - priceMin)*hRatePrice - 1));
+		}
+
+		if (m_iCellWidth <= 2)
+		{
+			pt1 = CPoint(cell_X, rcGrain.bottom - (int)((pTmpDat->price_max - priceMin)*hRatePrice));
+			pt2 = CPoint(cell_X, rcGrain.bottom - (int)((pTmpDat->price_min - priceMin)*hRatePrice));
+		}
+		else
+		{
+			pt1 = CPoint(cell_X + (m_iCellWidth - 1) / 2, rcGrain.bottom - (int)((pTmpDat->price_max - priceMin)*hRatePrice));
+			pt2 = CPoint(cell_X + (m_iCellWidth - 1) / 2, rcGrain.bottom - (int)((pTmpDat->price_min - priceMin)*hRatePrice));
+		}
+
+		// Draw grain
+		//drawLib.FillVarColorRect(pDC, rcTmp, 0x1, dayColor, dayColor, 0);
+		drawLib.DrawColorLine(pDC, pt1, pt2, dayColor);
+		if (bRising)
+			drawLib.FillVarColorRect(pDC, rcTmp, 0x5, dayColor, RGB(0, 0, 0), 0);
+		else
+			drawLib.FillVarColorRect(pDC, rcTmp, 0x5, dayColor, dayColor, 0);
+
+
+		// Draw amount
+		rcTmp = CRect(
+			cell_X,
+			rcAMount.bottom - (int)(pTmpDat->deal_amount*hRateAMount - 1),
+			cell_X + ((m_iCellWidth - 1) == 0 ? 1 : m_iCellWidth - 1),
+			rcAMount.bottom );
+
+		if (bRising)
+			drawLib.FillVarColorRect(pDC, rcTmp, 0x5, dayColor, RGB(0, 0, 0), 0);
+		else
+			drawLib.FillVarColorRect(pDC, rcTmp, 0x5, dayColor, dayColor, 0);
 
 
 	} while (pTmpDat != pDailyData);

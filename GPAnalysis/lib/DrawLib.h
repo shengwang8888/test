@@ -32,6 +32,7 @@ class DLL_API DrawLib
 	/*  crStart:   漸變開始的顏色
 	/*  crEnd:     漸變結束的顏色
 	/*  iCenterpos: mode=1,2時有效，crEnd結束的位置（即顏色從crStart->crEnd->crStart,單位：百分比）
+    /*              mode=0时， iCenterpos=0为不填充,用crStart为边框色. iCenterpos!=0为用crEnd填充
 	/***************************************************************************************************/
 	void FillVarColorRect( CDC *pDC, CRect &rect, int mode, COLORREF crStart, COLORREF crEnd, int iCenterPos);
 
