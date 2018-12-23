@@ -8,3 +8,4 @@ GPAnalysis/Release/
 GPAnalysis/lib/DrawLib/
 Release/GPAnalysis.lib
 Release/GPAnalysis.exp
+*.zip

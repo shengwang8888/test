@@ -27,6 +27,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWndEx)
 	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_APPLOOK_WIN_2000, ID_VIEW_APPLOOK_WINDOWS_7, &CMainFrame::OnUpdateApplicationLook)
 	ON_WM_SETTINGCHANGE()
 	ON_WM_CLOSE()
+	ON_WM_TIMER()
 END_MESSAGE_MAP()
 
 static UINT indicators[] =
@@ -173,6 +174,8 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	lstBasicCommands.AddTail(ID_SORTING_GROUPBYTYPE);
 
 	CMFCToolBar::SetBasicCommands(lstBasicCommands);
+
+	SetTimer(10001, 1000, 0);
 
 	return 0;
 }
@@ -411,4 +414,16 @@ void CMainFrame::OnClose()
 	this->ShowWindow(SW_SHOWMINIMIZED);			// Sheng.wang: just don't let main window iced on desktop long time
 
 	CFrameWndEx::OnClose();
+}
+
+
+void CMainFrame::OnTimer(UINT_PTR nIDEvent)
+{
+	if (nIDEvent == 10001)		// for quick debug
+	{
+		CString strFullName = gSetting.m_DataSourcePath + "\\sz\\lday\\sz000088.day";
+		::SendMessage(GetActiveView()->m_hWnd, WM_USER_ANALYSIS_SINGLE, (WPARAM)&strFullName, 0);
+	}
+
+	CFrameWndEx::OnTimer(nIDEvent);
 }
