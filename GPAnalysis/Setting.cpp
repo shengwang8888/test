@@ -7,7 +7,8 @@ CSetting gSetting;
 
 CSetting::CSetting()
 {
-	m_DataSourcePath = "F:\\005 +++股票A计划\\new_dgzq_v6\\vipdoc";
+	m_DataSourcePath = "G:\\new_dgzq_v6\\vipdoc";
+	//m_DataSourcePath = "F:\\005 +++股票A计划\\new_dgzq_v6\\vipdoc";
 	//m_DataSourcePath = _T("C:\\Users\\1000248740\\Documents\\Works\\Prj_2018\\GPA\\vipdoc");
 
 

@@ -1,5 +1,12 @@
 #pragma once
-#include "atltime.h"
+
+#include "lib\\DrawLib.h"
+
+#ifdef _DEBUG
+#pragma comment(lib,"lib\\Drawlib.dbg.lib")
+#else
+#pragma comment(lib,"lib\\Drawlib.rls.lib")
+#endif
 
 typedef struct daily_info
 {
@@ -26,12 +33,12 @@ class CGP
 public:
 	CGP(LPCSTR strGpFile);
 	~CGP();
-	BOOL LoadGPFile(LPCSTR strGpFile);
-	void FreeGPFile();
 
 public:
-	static CGP *m_gpLstHead;
 	static void ClearAll();
+	static CGP *GetGPLstHead();
+
+	PDAILYINFO GetDailyInfoDate();
 
 
 private:
@@ -40,9 +47,14 @@ private:
 	CString file_path;
 	PDAILYINFO m_pDailyDate;
 
+	static CGP *m_gpLstHead;
 	CGP *m_gpNext;
 	void Add_to_GpList();
 	void Remove_from_GpList();
+
+	BOOL LoadGPFile(LPCSTR strGpFile);
+	void FreeGPFile();
+
 
 };
 
@@ -52,7 +64,8 @@ public:
 	CGPMgr();
 	~CGPMgr();
 
+	void Draw_GP_UI(CDC *pDC, CRect &rcMainWnd);
+
 };
 
 extern CGPMgr gpMgr;
-

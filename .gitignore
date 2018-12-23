@@ -5,3 +5,6 @@ Release/GPAnalysis.iobj
 Release/GPAnalysis.pdb
 Release/GPAnalysis.ipdb
 GPAnalysis/Release/
+GPAnalysis/lib/DrawLib/
+Release/GPAnalysis.lib
+Release/GPAnalysis.exp

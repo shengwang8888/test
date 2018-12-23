@@ -19,7 +19,6 @@
 #define new DEBUG_NEW
 #endif
 
-
 // CGPAnalysisView
 
 IMPLEMENT_DYNCREATE(CGPAnalysisView, CView)
@@ -65,18 +64,18 @@ void CGPAnalysisView::OnDraw(CDC* pDC)
 		return;
 
 	CMemDC		memDC( *pDC, this );
+	CDC *       pMDC = &memDC.GetDC();
 	CRect		rcView;
 	int			i;
 
 	GetClientRect( &rcView );
-	memDC.GetDC().FillSolidRect( &rcView, 0 );
+	pMDC->FillSolidRect( &rcView, 0 );
 	
-	for( i=0; i<rcView.Width()*rcView.Height()/4; i++ )
-		memDC.GetDC().SetPixel( rand()%rcView.Width(), rand()%rcView.Height(), RGB(255,0,0) );
+	//for( i=0; i<rcView.Width()*rcView.Height()/4; i++ )
+	//	memDC.GetDC().SetPixel( rand()%rcView.Width(), rand()%rcView.Height(), RGB(255,0,0) );
 
-	
+	gpMgr.Draw_GP_UI(pMDC, rcView);
 
-	// TODO: add draw code for native data here
 }
 
 
@@ -165,6 +164,8 @@ LRESULT CGPAnalysisView::OnAnalysisSingleGP(WPARAM wParam, LPARAM lParam)
 
 	CGPAnalysisDoc *pDoc = GetDocument();
 	CGP *pGP = new CGP(pGpFile->GetString());
+
+	Invalidate(0);
 
 	return 0;
 }
