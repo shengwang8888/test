@@ -72,8 +72,8 @@ public:
 	int m_iScale;
 	int m_iCellWidth;
 	int m_iCellHigh;
-	void Draw_GP_UI(CDC *pDC, CRect &rcMainWnd);
 	void UI_Zoom(ZOOMMODE mode);
+	void Draw_GP_UI(CDC *pDC, CRect &rcMainWnd);
 
 };
 

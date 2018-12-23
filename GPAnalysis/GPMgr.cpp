@@ -201,12 +201,11 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd)
 	CRect rcGrain = rcMainWnd;
 	CRect rcAMount = rcMainWnd;
 
-	rcGrain.top = rcGrain.top + 20;
+	rcGrain.top = rcGrain.top + 10;
+	rcGrain.right = rcGrain.right - 50;
 	rcGrain.bottom = (LONG)(rcGrain.bottom *0.7);
 
-	rcAMount.top = rcGrain.bottom;
-
-	//pDC->Draw3dRect(rcGrain, RGB(255, 0, 0), RGB(255, 0, 0));
+	rcAMount.top = rcGrain.bottom + 10;
 
 
 
@@ -251,11 +250,51 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd)
 	int dayCnt = 0;
 	int overlapCnt = 0;
 
-	//pTmpDat = pDailyData;
+	BOOL		bRising;
+	COLORREF	dayColor;
+	CRect		rcTmp;
+	CPoint		pt1;
+	CPoint		pt2;
+
+	// Draw_Coordinate
+	int priceStep = (priceMax - priceMin) / 20;
+
+	dayColor = RGB(176, 0, 0);
+	pDC->SetTextColor(dayColor);
+	pDC->SetBkMode(TRANSPARENT);
+
+	pt1 = CPoint(rcMainWnd.left, rcGrain.bottom);
+	pt2 = CPoint(rcMainWnd.right, rcGrain.bottom);
+	drawLib.DrawColorLine(pDC, pt1, pt2, dayColor);
+	pt1 = CPoint(rcGrain.right, rcMainWnd.top);
+	pt2 = CPoint(rcGrain.right, rcMainWnd.bottom);
+	drawLib.DrawColorLine(pDC, pt1, pt2, dayColor);
+
+	for (int i = 1; i < 20; i++)
+	{
+		int yPos = rcGrain.bottom - (int)((priceStep * i)*hRatePrice);
+		pt1 = CPoint(rcGrain.right, yPos);
+		pt2 = CPoint(rcGrain.right+4, yPos);
+		drawLib.DrawColorLine(pDC, pt1, pt2, dayColor);
+
+
+		if (i % 2 == 0)
+		{
+			pt1 = CPoint(rcGrain.left, yPos);
+			pt2 = CPoint(rcGrain.right, yPos);
+			drawLib.DrawColorLine(pDC, pt1, pt2, dayColor, PS_DOT);
+
+			CString strPrice;
+			strPrice.Format("%.2f", (double)(priceMin+ priceStep*i)/100);
+			pDC->TextOutA(rcGrain.right + 6, yPos - 8, strPrice);
+			//pDC->ExtTextOutA( )
+		}
+
+	}
+
+	// Draw grain
 	do
 	{
-		TRACE("cell_overlap=%d, overlapCnt=%d, dayCnt=%d\n", cell_overlap, overlapCnt, dayCnt);
-
 		int cell_X = rcGrain.left + dayCnt * cell_W;
 		if (cell_X < 0) break;
 
@@ -272,17 +311,11 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd)
 		else
 			dayCnt++;
 
-		BOOL		bRising;
-		COLORREF	dayColor;
-		CRect		rcTmp;
-		CPoint		pt1;
-		CPoint		pt2;
-
 		if (pTmpDat->price_close > pTmpDat->price_open)
 		{
 			bRising  = TRUE;
 
-			dayColor = RGB(255, 0, 0);
+			dayColor = RGB(255, 50, 50);
 			rcTmp = CRect(
 				cell_X,
 				rcGrain.bottom - (int)((pTmpDat->price_close - priceMin)*hRatePrice),
@@ -323,8 +356,6 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd)
 			pt2 = CPoint(cell_X + (cell_W - 1) / 2, rcGrain.bottom - (int)((pTmpDat->price_min - priceMin)*hRatePrice));
 		}
 
-		// Draw grain
-		//drawLib.FillVarColorRect(pDC, rcTmp, 0x1, dayColor, dayColor, 0);
 		drawLib.DrawColorLine(pDC, pt1, pt2, dayColor);
 		if (bRising)
 			drawLib.FillVarColorRect(pDC, rcTmp, 0x1, dayColor, RGB(80, 0, 20), 0);
@@ -349,5 +380,7 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd)
 	} while (pTmpDat != pDailyData && pTmpDat != NULL );
 
 
+
 }
+
 
