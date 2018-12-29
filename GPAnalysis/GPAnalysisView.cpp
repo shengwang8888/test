@@ -33,6 +33,7 @@ BEGIN_MESSAGE_MAP(CGPAnalysisView, CView)
 	ON_COMMAND(ID_FILE_OPEN, &CGPAnalysisView::OnFileOpen)
 	ON_MESSAGE(WM_USER_ANALYSIS_SINGLE, &CGPAnalysisView::OnAnalysisSingleGP)
 ON_WM_KEYDOWN()
+ON_WM_MOUSEMOVE()
 END_MESSAGE_MAP()
 
 // CGPAnalysisView construction/destruction
@@ -67,15 +68,11 @@ void CGPAnalysisView::OnDraw(CDC* pDC)
 	CMemDC		memDC( *pDC, this );
 	CDC *       pMDC = &memDC.GetDC();
 	CRect		rcView;
-	int			i;
 
 	GetClientRect( &rcView );
 	pMDC->FillSolidRect( &rcView, 0 );
 	
-	//for( i=0; i<rcView.Width()*rcView.Height()/4; i++ )
-	//	memDC.GetDC().SetPixel( rand()%rcView.Width(), rand()%rcView.Height(), RGB(255,0,0) );
-
-	gpMgr.Draw_GP_UI(pMDC, rcView);
+	gpMgr.Draw_GP_UI(pMDC, rcView, m_ptMouse);
 
 }
 
@@ -191,4 +188,13 @@ void CGPAnalysisView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	Invalidate(0);
 
 	CView::OnKeyDown(nChar, nRepCnt, nFlags);
+}
+
+
+void CGPAnalysisView::OnMouseMove(UINT nFlags, CPoint point)
+{
+	m_ptMouse = point;
+	Invalidate(0);
+
+	CView::OnMouseMove(nFlags, point);
 }

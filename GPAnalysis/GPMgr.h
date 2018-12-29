@@ -8,6 +8,9 @@
 #pragma comment(lib,"lib\\Drawlib.rls.lib")
 #endif
 
+enum AVGLINE { LINE5, LINE10, LINE20, LINE30, LINE40, LINE50, LINE60, LINE120
+};
+
 typedef struct daily_info
 {
 	int date;
@@ -23,6 +26,8 @@ typedef struct daily_info
 
 	struct daily_info *day_prev;
 	struct daily_info *day_next;
+	int avgLine[10];					// Normal is: 5, 10, 20, 30, 40, 50, 60 days average line
+
 
 }DAILYINFO, *PDAILYINFO;
 
@@ -73,7 +78,7 @@ public:
 	int m_iCellWidth;
 	int m_iCellHigh;
 	void UI_Zoom(ZOOMMODE mode);
-	void Draw_GP_UI(CDC *pDC, CRect &rcMainWnd);
+	void Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse);
 
 };
 

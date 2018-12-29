@@ -75,9 +75,13 @@ void CGP::Remove_from_GpList()
 
 BOOL CGP::LoadGPFile(LPCSTR strGpFile)
 {
-	CFile fp;
+	CFile     fp;
 	DAILYINFO dailyInfo;
 	DAILYINFO *pHead;
+	int       dayVal[120];
+	int       maxDay = sizeof(dayVal) / sizeof(dayVal[0]);
+	int       dayCnt = 0;
+	int       i;
 
 	if (fp.Open(strGpFile, CFile::modeRead) == false)
 	{
@@ -112,6 +116,43 @@ BOOL CGP::LoadGPFile(LPCSTR strGpFile)
 
 			m_pDailyDate->day_prev = pHead;
 			//pHead->day_next = m_pDailyDate;
+
+
+			// calculate average line data
+			if (dayCnt == 0)
+			{
+				// init all data
+				for (i = 0; i < maxDay; i++) dayVal[i] = pData->price_close;
+			}
+
+			dayVal[dayCnt%maxDay] = pData->price_close;
+
+			for (i = 0; i < maxDay; i++)
+			{
+				int datPos = (dayCnt % maxDay) - i;
+
+				if (datPos < 0) datPos += maxDay;
+
+				if (i < 5)  pData->avgLine[LINE5] += dayVal[datPos];
+				if (i < 10) pData->avgLine[LINE10] += dayVal[datPos];
+				if (i < 20) pData->avgLine[LINE20] += dayVal[datPos];
+				if (i < 30) pData->avgLine[LINE30] += dayVal[datPos];
+				if (i < 40) pData->avgLine[LINE40] += dayVal[datPos];
+				if (i < 50) pData->avgLine[LINE50] += dayVal[datPos];
+				if (i < 60) pData->avgLine[LINE60] += dayVal[datPos];
+				if (i < 120) pData->avgLine[LINE120] += dayVal[datPos];
+			}
+
+			pData->avgLine[LINE5] /= 5;
+			pData->avgLine[LINE10] /= 10;
+			pData->avgLine[LINE20] /= 20;
+			pData->avgLine[LINE30] /= 30;
+			pData->avgLine[LINE40] /= 40;
+			pData->avgLine[LINE50] /= 50;
+			pData->avgLine[LINE60] /= 60;
+			pData->avgLine[LINE120] /= 120;
+
+			dayCnt++;
 		}
 		else
 			break;
@@ -193,19 +234,27 @@ void CGPMgr::UI_Zoom(ZOOMMODE mode)
 
 
 
-void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd)
+void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse)
 {
 	CGP *pGP = CGP::GetGPLstHead();
 	if (pGP == NULL) return;
 
 	CRect rcGrain = rcMainWnd;
 	CRect rcAMount = rcMainWnd;
+	CRect rcPriceLeft = rcMainWnd;
+	CRect rcDate = rcMainWnd;
 
 	rcGrain.top = rcGrain.top + 10;
 	rcGrain.right = rcGrain.right - 50;
 	rcGrain.bottom = (LONG)(rcGrain.bottom *0.7);
 
+	rcPriceLeft.left = rcGrain.right;
+	rcPriceLeft.bottom = rcGrain.bottom;
+
 	rcAMount.top = rcGrain.bottom + 10;
+	rcAMount.bottom = rcMainWnd.bottom - 18;
+
+	rcDate.top = rcAMount.bottom +2;
 
 
 
@@ -225,7 +274,9 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd)
 		maxDay *= cell_overlap+1;
 
 	// Draw grain windows
+	PDAILYINFO pSelectedDay = NULL;
 	PDAILYINFO pTmpDat = pDailyData;
+
 	int priceMin = 0x7fffffff;
 	int priceMax = 0;
 	int amountMax = 0;
@@ -249,9 +300,15 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd)
 	double hRateAMount = (double)(rcAMount.Height()) / amountMax;
 	int dayCnt = 0;
 	int overlapCnt = 0;
+	int lastDate = 0;
 
+	CString		strDate;
+	CString     strPrice;
 	BOOL		bRising;
 	COLORREF	dayColor;
+	COLORREF	whiteLineColor = RGB(192, 192, 192);
+	COLORREF	L60Color = RGB(0, 192, 0);
+
 	CRect		rcTmp;
 	CPoint		pt1;
 	CPoint		pt2;
@@ -269,6 +326,9 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd)
 	pt1 = CPoint(rcGrain.right, rcMainWnd.top);
 	pt2 = CPoint(rcGrain.right, rcMainWnd.bottom);
 	drawLib.DrawColorLine(pDC, pt1, pt2, dayColor);
+	pt1 = CPoint(rcDate.left, rcDate.top);
+	pt2 = CPoint(rcDate.right, rcDate.top);
+	drawLib.DrawColorLine(pDC, pt1, pt2, dayColor);
 
 	for (int i = 1; i < 20; i++)
 	{
@@ -284,7 +344,6 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd)
 			pt2 = CPoint(rcGrain.right, yPos);
 			drawLib.DrawColorLine(pDC, pt1, pt2, dayColor, PS_DOT);
 
-			CString strPrice;
 			strPrice.Format("%.2f", (double)(priceMin+ priceStep*i)/100);
 			pDC->TextOutA(rcGrain.right + 6, yPos - 8, strPrice);
 			//pDC->ExtTextOutA( )
@@ -293,9 +352,13 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd)
 	}
 
 	// Draw grain
+	int cell_X = rcGrain.left;
+	int last_cell_X;
 	do
 	{
-		int cell_X = rcGrain.left + dayCnt * cell_W;
+		last_cell_X = cell_X;
+
+		cell_X = rcGrain.left + dayCnt * cell_W;
 		if (cell_X < 0) break;
 
 		if (cell_overlap > 0)
@@ -375,11 +438,61 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd)
 		else
 			drawLib.FillVarColorRect(pDC, rcTmp, 0x5, dayColor, dayColor, 0);
 
+
+		// For draw fix date/price
+		if (ptMouse.x >= rcTmp.left && ptMouse.x <= rcTmp.right)
+		{
+			pSelectedDay = pTmpDat;
+		}
+
+		
+		// Draw average lines
+		if (cell_X > rcGrain.left)
+		{
+			int avg0 = pTmpDat->day_prev->avgLine[LINE60];
+			int avg1 = pTmpDat->avgLine[LINE60];
+
+			pt1 = CPoint(cell_X + (cell_W - 1) / 2, rcGrain.bottom - (int)((avg1 - priceMin)*hRatePrice));
+			pt2 = CPoint(last_cell_X + (cell_W - 1) / 2, rcGrain.bottom - (int)((avg0 - priceMin)*hRatePrice));
+
+			if( rcGrain.PtInRect(pt1) && rcGrain.PtInRect(pt2))
+				drawLib.DrawColorLine(pDC, pt1, pt2, L60Color);
+		}
+
+
+
 		pTmpDat = pTmpDat->day_next;
 
 	} while (pTmpDat != pDailyData && pTmpDat != NULL );
 
 
+
+	// Draw mouse line
+	pt1 = CPoint(ptMouse.x, rcMainWnd.top);
+	pt2 = CPoint(ptMouse.x, rcMainWnd.bottom);
+	drawLib.DrawColorLine(pDC, pt1, pt2, whiteLineColor);
+
+	pt1 = CPoint(rcMainWnd.left, ptMouse.y);
+	pt2 = CPoint(rcMainWnd.right, ptMouse.y);
+	drawLib.DrawColorLine(pDC, pt1, pt2, whiteLineColor);
+
+
+	// Draw dynamic date/price
+	pDC->SetBkMode(OPAQUE);
+	pDC->SetBkColor(RGB(0, 0, 128));
+	pDC->SetTextColor(whiteLineColor);
+
+	if (pSelectedDay)
+	{
+		strDate.Format("%d/%d/%d", pSelectedDay->date / 10000, (pSelectedDay->date / 100) % 100, pSelectedDay->date % 100);
+		pDC->TextOutA(ptMouse.x, rcDate.top, strDate);
+	}
+
+	if (rcGrain.PtInRect(ptMouse))
+	{
+		strPrice.Format("%.2f", ((double)(rcGrain.bottom - ptMouse.y) / hRatePrice + priceMin) / 100);
+		pDC->TextOutA(rcGrain.right + 6, ptMouse.y - 8, strPrice);
+	}
 
 }
 
