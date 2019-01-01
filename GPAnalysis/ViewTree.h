@@ -17,7 +17,8 @@ protected:
 	void OnDblClkTree(NMHDR* pNMHDR, LRESULT* pResult);
 	void OnClkTree(NMHDR* pNMHDR, LRESULT* pResult);
 
-
+private:
+	void GetSelectedFullName(CString &strFullName, int &type);
 
 // Implementation
 public:
@@ -25,4 +26,9 @@ public:
 
 protected:
 	DECLARE_MESSAGE_MAP()
+public:
+	afx_msg void OnExplorerExport();
+	afx_msg void OnExplorerExportall();
+	afx_msg void OnExplorerAnalysis();
+	afx_msg void OnExplorerAnalysisall();
 };

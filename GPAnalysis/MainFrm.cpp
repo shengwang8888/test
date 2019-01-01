@@ -422,7 +422,7 @@ void CMainFrame::OnTimer(UINT_PTR nIDEvent)
 	if (nIDEvent == 10001)		// for quick debug
 	{
 		CString strFullName = gSetting.m_DataSourcePath + "\\sz\\lday\\sz000088.day";
-		::SendMessage(GetActiveView()->m_hWnd, WM_USER_ANALYSIS_SINGLE, (WPARAM)&strFullName, 0);
+		::SendMessage(GetActiveView()->m_hWnd, WM_USER_SHOW_GP, (WPARAM)&strFullName, 0);
 		KillTimer(10001);
 	}
 

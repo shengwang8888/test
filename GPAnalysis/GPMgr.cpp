@@ -105,6 +105,7 @@ BOOL CGP::LoadGPFile(LPCSTR strGpFile)
 			{
 				m_pDailyDate = pData;
 				pHead = m_pDailyDate;
+				pHead->day_prev = m_pDailyDate;
 			}
 			else
 			{
@@ -184,6 +185,11 @@ PDAILYINFO CGP::GetDailyInfoDate()
 CGP *CGP::GetGPLstHead()
 {
 	return m_gpLstHead;
+}
+
+CGP *CGP::GetNextGP()
+{
+	return m_gpNext;
 }
 
 void CGP::ClearAll()
@@ -308,6 +314,7 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse)
 	COLORREF	dayColor;
 	COLORREF	whiteLineColor = RGB(192, 192, 192);
 	COLORREF	L60Color = RGB(0, 192, 0);
+	COLORREF	L10Color = RGB(192, 192, 0);
 
 	CRect		rcTmp;
 	CPoint		pt1;
@@ -449,6 +456,7 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse)
 		// Draw average lines
 		if (cell_X > rcGrain.left)
 		{
+			// Draw 60 days average line
 			int avg0 = pTmpDat->day_prev->avgLine[LINE60];
 			int avg1 = pTmpDat->avgLine[LINE60];
 
@@ -457,6 +465,20 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse)
 
 			if( rcGrain.PtInRect(pt1) && rcGrain.PtInRect(pt2))
 				drawLib.DrawColorLine(pDC, pt1, pt2, L60Color);
+
+
+			// Draw 60 days average line
+			avg0 = pTmpDat->day_prev->avgLine[LINE10];
+			avg1 = pTmpDat->avgLine[LINE10];
+
+			pt1 = CPoint(cell_X + (cell_W - 1) / 2, rcGrain.bottom - (int)((avg1 - priceMin)*hRatePrice));
+			pt2 = CPoint(last_cell_X + (cell_W - 1) / 2, rcGrain.bottom - (int)((avg0 - priceMin)*hRatePrice));
+
+			if (rcGrain.PtInRect(pt1) && rcGrain.PtInRect(pt2))
+				drawLib.DrawColorLine(pDC, pt1, pt2, L10Color);
+
+
+
 		}
 
 

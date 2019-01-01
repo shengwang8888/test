@@ -3,6 +3,7 @@
 #include "ViewTree.h"
 
 #include "MainFrm.h"
+#include "resource.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -24,6 +25,10 @@ CViewTree::~CViewTree()
 BEGIN_MESSAGE_MAP(CViewTree, CTreeCtrl)
 	ON_NOTIFY_REFLECT(NM_DBLCLK, &CViewTree::OnDblClkTree)
 	ON_NOTIFY_REFLECT(NM_CLICK, &CViewTree::OnClkTree)
+	ON_COMMAND(ID_EXPLORER_EXPORT, &CViewTree::OnExplorerExport)
+	ON_COMMAND(ID_EXPLORER_EXPORTALL, &CViewTree::OnExplorerExportall)
+	ON_COMMAND(ID_EXPLORER_ANALYSIS, &CViewTree::OnExplorerAnalysis)
+	ON_COMMAND(ID_EXPLORER_ANALYSISALL, &CViewTree::OnExplorerAnalysisall)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -44,12 +49,12 @@ BOOL CViewTree::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 	return bRes;
 }
 
-void CViewTree::OnDblClkTree(NMHDR* pNMHDR, LRESULT* pResult)
+void CViewTree::GetSelectedFullName(CString &strFullName, int &type)
 {
 	HTREEITEM hRoot = GetRootItem();
 	HTREEITEM hTreeItem = GetSelectedItem();
 	HTREEITEM hParentItem = hTreeItem;
-	CString   strFullName;
+
 	//以GetItemText()函数为例： 
 
 	strFullName = GetItemText(hTreeItem);
@@ -57,7 +62,7 @@ void CViewTree::OnDblClkTree(NMHDR* pNMHDR, LRESULT* pResult)
 	while (hParentItem != hRoot)
 	{
 		hParentItem = GetParentItem(hParentItem);
-		if(hParentItem == hRoot )
+		if (hParentItem == hRoot)
 			strFullName = gSetting.m_DataSourcePath + "\\" + strFullName;
 		else
 			strFullName = GetItemText(hParentItem) + "\\" + strFullName;
@@ -66,11 +71,23 @@ void CViewTree::OnDblClkTree(NMHDR* pNMHDR, LRESULT* pResult)
 	int imgId, imgSelId;
 	GetItemImage(hTreeItem, imgId, imgSelId);
 
-	if (imgId != 0)
+	type = imgId;
+}
+
+
+void CViewTree::OnDblClkTree(NMHDR* pNMHDR, LRESULT* pResult)
+{
+	CString   strFullName;
+	int       imgType;
+	//以GetItemText()函数为例：
+
+	GetSelectedFullName(strFullName, imgType);
+
+	if (imgType != 0)
 	{
 		//AfxMessageBox("You have selected " + strFullName);
 		CMainFrame* pMainWnd = (CMainFrame *)(AfxGetApp()->GetMainWnd());
-		::SendMessage(pMainWnd->GetActiveView()->m_hWnd, WM_USER_ANALYSIS_SINGLE, (WPARAM)&strFullName, 0);
+		::SendMessage(pMainWnd->GetActiveView()->m_hWnd, WM_USER_SHOW_GP, (WPARAM)&strFullName, 0);
 	}
 
 	*pResult = 0;
@@ -85,4 +102,28 @@ void CViewTree::OnClkTree(NMHDR* pNMHDR, LRESULT* pResult)
 	//AfxMessageBox("You have selected " + S1);
 
 	*pResult = 0;
+}
+
+
+void CViewTree::OnExplorerExport()
+{
+	// TODO: Add your command handler code here
+}
+
+
+void CViewTree::OnExplorerExportall()
+{
+	// TODO: Add your command handler code here
+}
+
+
+void CViewTree::OnExplorerAnalysis()
+{
+	// TODO: Add your command handler code here
+}
+
+
+void CViewTree::OnExplorerAnalysisall()
+{
+	// TODO: Add your command handler code here
 }

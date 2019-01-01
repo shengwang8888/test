@@ -24,10 +24,9 @@ typedef struct daily_info
 
 	//CTime date;						// date.Format("%Y-%m-%d");
 
-	struct daily_info *day_prev;
-	struct daily_info *day_next;
+	struct daily_info *day_prev;		// day_prev is a infinite cycle
+	struct daily_info *day_next;		// day_next end at NULL
 	int avgLine[10];					// Normal is: 5, 10, 20, 30, 40, 50, 60 days average line
-
 
 }DAILYINFO, *PDAILYINFO;
 
@@ -42,6 +41,7 @@ public:
 public:
 	static void ClearAll();
 	static CGP *GetGPLstHead();
+	CGP *GetNextGP();
 
 	PDAILYINFO GetDailyInfoDate();
 

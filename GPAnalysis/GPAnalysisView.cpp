@@ -14,6 +14,7 @@
 
 #include "MainFrm.h"
 #include "GPMgr.h"
+#include "GPStrategy.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -31,7 +32,7 @@ BEGIN_MESSAGE_MAP(CGPAnalysisView, CView)
 	ON_WM_CONTEXTMENU()
 	ON_WM_RBUTTONUP()
 	ON_COMMAND(ID_FILE_OPEN, &CGPAnalysisView::OnFileOpen)
-	ON_MESSAGE(WM_USER_ANALYSIS_SINGLE, &CGPAnalysisView::OnAnalysisSingleGP)
+	ON_MESSAGE(WM_USER_SHOW_GP, &CGPAnalysisView::OnAnalysisSingleGP)
 ON_WM_KEYDOWN()
 ON_WM_MOUSEMOVE()
 END_MESSAGE_MAP()
@@ -157,11 +158,22 @@ void CGPAnalysisView::OnFileOpen()
 
 LRESULT CGPAnalysisView::OnAnalysisSingleGP(WPARAM wParam, LPARAM lParam)
 {
+	CGPAnalysisDoc *pDoc = GetDocument();
+
 	CString *pGpFile = (CString *)wParam;
 	//AfxMessageBox((CString)"Msg detected:\n" + *pGpFile);
 
-	CGPAnalysisDoc *pDoc = GetDocument();
+
 	CGP *pGP = new CGP(pGpFile->GetString());
+
+	GPStrategy_6010 StrategyAnalyer;
+	StrategyAnalyer.do_strategy_analysis(0, 0, pGP);
+
+	GPStrategyReport *pReport = StrategyAnalyer.get_strategy_report();
+	int ret, precent;
+	ret = pReport->GetTotalProfit();
+	ret = pReport->GetLostTimes(&precent);
+	ret = pReport->GetWinTimes(&precent);
 
 	Invalidate(0);
 
