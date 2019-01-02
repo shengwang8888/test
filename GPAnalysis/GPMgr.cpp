@@ -207,13 +207,47 @@ void CGP::ClearAll()
 
 ///////////////////////////////////////// GP Manager /////////////////////////////////////////
 CGPMgr  gpMgr;
-DrawLib drawLib;
+//DrawLib drawLib;
+
+//enum COLORPEN {
+//	PEN_WHITE, PEN_BLACK, PEN_60DAY, PEN_50DAY,
+//	PEN_40DAY, PEN_30DAY, PEN_20DAY, PEN_10DAY,
+//	PEN_5DAY, PEN_WIN, PEN_LOSE, PEN_WHITELINE,
+//	PEN_REDLINE, PEN_COORDINATEDOT, PEN_COORDINATE, PEN_MAX
+//};
+
+
+PEN_INFO penInfo[] = {
+	{PS_SOLID, 1, RGB(255, 255, 255)},
+	{PS_SOLID, 1, RGB(0, 0, 0)},
+	{PS_SOLID, 1, RGB(0, 192, 0)},				//60
+	{PS_SOLID, 1, RGB(30, 192, 0)},
+
+	{PS_SOLID, 1, RGB(30, 192, 30)},
+	{PS_SOLID, 1, RGB(60, 192, 0)},
+	{PS_SOLID, 1, RGB(60, 192, 60)},
+	{PS_SOLID, 1, RGB(192, 192, 0)},			//10
+
+	{PS_SOLID, 1, RGB(192, 192, 192)},			//5
+	{PS_SOLID, 1, RGB(255, 50, 50)},			//win
+	{PS_SOLID, 1, RGB(84, 255, 255)},			//lost
+	{PS_SOLID, 1, RGB(192, 192, 192)},
+
+	{PS_SOLID, 1, RGB(255, 50, 50)},
+	{PS_DOT,   1, RGB(176, 0, 0)},
+	{PS_SOLID, 1, RGB(176, 0, 0)},
+};
 
 
 CGPMgr::CGPMgr()
 {
 	m_iCellWidth = 10;
 	m_iCellHigh  = 30;
+
+	for (int i = 0; i < PEN_MAX; i++)
+	{
+		m_pens[i].CreatePen(penInfo[i].style, penInfo[i].width, penInfo[i].color );
+	}
 }
 
 
@@ -311,7 +345,7 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse)
 	CString		strDate;
 	CString     strPrice;
 	BOOL		bRising;
-	COLORREF	dayColor;
+	COLORPEN	penColor;
 	COLORREF	whiteLineColor = RGB(192, 192, 192);
 	COLORREF	L60Color = RGB(0, 192, 0);
 	COLORREF	L10Color = RGB(192, 192, 0);
@@ -323,33 +357,33 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse)
 	// Draw_Coordinate
 	int priceStep = (priceMax - priceMin) / 20;
 
-	dayColor = RGB(176, 0, 0);
-	pDC->SetTextColor(dayColor);
+	penColor = PEN_COORDINATE;
+	pDC->SetTextColor(penInfo[penColor].color);
 	pDC->SetBkMode(TRANSPARENT);
 
 	pt1 = CPoint(rcMainWnd.left, rcGrain.bottom);
 	pt2 = CPoint(rcMainWnd.right, rcGrain.bottom);
-	drawLib.DrawColorLine(pDC, pt1, pt2, dayColor);
+	DrawColorLine(pDC, pt1, pt2, penColor);
 	pt1 = CPoint(rcGrain.right, rcMainWnd.top);
 	pt2 = CPoint(rcGrain.right, rcMainWnd.bottom);
-	drawLib.DrawColorLine(pDC, pt1, pt2, dayColor);
+	DrawColorLine(pDC, pt1, pt2);
 	pt1 = CPoint(rcDate.left, rcDate.top);
 	pt2 = CPoint(rcDate.right, rcDate.top);
-	drawLib.DrawColorLine(pDC, pt1, pt2, dayColor);
+	DrawColorLine(pDC, pt1, pt2);
 
 	for (int i = 1; i < 20; i++)
 	{
 		int yPos = rcGrain.bottom - (int)((priceStep * i)*hRatePrice);
 		pt1 = CPoint(rcGrain.right, yPos);
 		pt2 = CPoint(rcGrain.right+4, yPos);
-		drawLib.DrawColorLine(pDC, pt1, pt2, dayColor);
+		DrawColorLine(pDC, pt1, pt2, penColor);
 
 
 		if (i % 2 == 0)
 		{
 			pt1 = CPoint(rcGrain.left, yPos);
 			pt2 = CPoint(rcGrain.right, yPos);
-			drawLib.DrawColorLine(pDC, pt1, pt2, dayColor, PS_DOT);
+			DrawColorLine(pDC, pt1, pt2, PEN_COORDINATEDOT);
 
 			strPrice.Format("%.2f", (double)(priceMin+ priceStep*i)/100);
 			pDC->TextOutA(rcGrain.right + 6, yPos - 8, strPrice);
@@ -385,7 +419,7 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse)
 		{
 			bRising  = TRUE;
 
-			dayColor = RGB(255, 50, 50);
+			penColor = PEN_WIN;
 			rcTmp = CRect(
 				cell_X,
 				rcGrain.bottom - (int)((pTmpDat->price_close - priceMin)*hRatePrice),
@@ -396,7 +430,7 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse)
 		{
 			bRising = FALSE;
 
-			dayColor = RGB(84, 255, 255);
+			penColor = PEN_LOSE;
 			rcTmp = CRect(
 				cell_X,
 				rcGrain.bottom - (int)((pTmpDat->price_open - priceMin)*hRatePrice),
@@ -407,7 +441,7 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse)
 		{
 			bRising = TRUE;
 
-			dayColor = RGB(255, 50, 50);
+			penColor = PEN_WIN;
 			rcTmp = CRect(
 				cell_X,
 				rcGrain.bottom - (int)((pTmpDat->price_close - priceMin)*hRatePrice),
@@ -426,11 +460,11 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse)
 			pt2 = CPoint(cell_X + (cell_W - 1) / 2, rcGrain.bottom - (int)((pTmpDat->price_min - priceMin)*hRatePrice));
 		}
 
-		drawLib.DrawColorLine(pDC, pt1, pt2, dayColor);
+		DrawColorLine(pDC, pt1, pt2, penColor);
 		if (bRising)
-			drawLib.FillVarColorRect(pDC, rcTmp, 0x1, dayColor, RGB(80, 0, 20), 0);
+			FillColorRect(pDC, rcTmp, penColor, PEN_BLACK);
 		else
-			drawLib.FillVarColorRect(pDC, rcTmp, 0x1, dayColor, RGB(50, 80, 80), 0);
+			FillColorRect(pDC, rcTmp, penColor, penColor);
 
 
 		// Draw amount
@@ -441,9 +475,9 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse)
 			rcAMount.bottom );
 
 		if (bRising)
-			drawLib.FillVarColorRect(pDC, rcTmp, 0x5, dayColor, RGB(0, 0, 0), 0);
+			FillColorRect(pDC, rcTmp, penColor, PEN_BLACK);
 		else
-			drawLib.FillVarColorRect(pDC, rcTmp, 0x5, dayColor, dayColor, 0);
+			FillColorRect(pDC, rcTmp, penColor, penColor);
 
 
 		// For draw fix date/price
@@ -464,7 +498,7 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse)
 			pt2 = CPoint(last_cell_X + (cell_W - 1) / 2, rcGrain.bottom - (int)((avg0 - priceMin)*hRatePrice));
 
 			if( rcGrain.PtInRect(pt1) && rcGrain.PtInRect(pt2))
-				drawLib.DrawColorLine(pDC, pt1, pt2, L60Color);
+				DrawColorLine(pDC, pt1, pt2, PEN_60DAY);
 
 
 			// Draw 60 days average line
@@ -475,9 +509,7 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse)
 			pt2 = CPoint(last_cell_X + (cell_W - 1) / 2, rcGrain.bottom - (int)((avg0 - priceMin)*hRatePrice));
 
 			if (rcGrain.PtInRect(pt1) && rcGrain.PtInRect(pt2))
-				drawLib.DrawColorLine(pDC, pt1, pt2, L10Color);
-
-
+				DrawColorLine(pDC, pt1, pt2, PEN_10DAY);
 
 		}
 
@@ -492,17 +524,17 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse)
 	// Draw mouse line
 	pt1 = CPoint(ptMouse.x, rcMainWnd.top);
 	pt2 = CPoint(ptMouse.x, rcMainWnd.bottom);
-	drawLib.DrawColorLine(pDC, pt1, pt2, whiteLineColor);
+	DrawColorLine(pDC, pt1, pt2, PEN_WHITELINE);
 
 	pt1 = CPoint(rcMainWnd.left, ptMouse.y);
 	pt2 = CPoint(rcMainWnd.right, ptMouse.y);
-	drawLib.DrawColorLine(pDC, pt1, pt2, whiteLineColor);
+	DrawColorLine(pDC, pt1, pt2);
 
 
 	// Draw dynamic date/price
 	pDC->SetBkMode(OPAQUE);
 	pDC->SetBkColor(RGB(0, 0, 128));
-	pDC->SetTextColor(whiteLineColor);
+	pDC->SetTextColor(GetPenColor(PEN_WHITELINE));
 
 	if (pSelectedDay)
 	{
@@ -517,5 +549,56 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse)
 	}
 
 }
+
+void CGPMgr::DrawColorLine(CDC *pDC, CPoint p1, CPoint p2, COLORPEN penId)
+{
+	if (penId > PEN_MAX) 
+		return;
+
+	if( penId < PEN_MAX )
+		pDC->SelectObject(m_pens[penId]);
+
+	pDC->MoveTo(p1.x, p1.y);
+	pDC->LineTo(p2.x, p2.y);
+}
+
+void CGPMgr::FillColorRect(CDC *pDC, CRect &rect, COLORPEN pen1, COLORPEN pen2)
+{
+	if (pen1 > PEN_MAX || pen2 > PEN_MAX) return;
+
+	if (rect.Width() <= 0 || rect.Height() <= 0) return;
+
+	if (pen2 < PEN_MAX)
+		pDC->SelectObject(m_pens[pen2]);
+
+
+	for (int i = 0; i < rect.Width(); i++)
+	{
+		pDC->MoveTo(rect.left+i, rect.top);
+		pDC->LineTo(rect.left+i, rect.bottom-1);
+	}
+
+	if (pen1 < PEN_MAX)
+		pDC->SelectObject(m_pens[pen1]);
+
+	pDC->MoveTo(rect.left, rect.top);
+	pDC->LineTo(rect.left, rect.bottom-1);
+
+	if (rect.Width() > 1)
+	{
+		pDC->LineTo(rect.right-1, rect.bottom-1);
+		pDC->LineTo(rect.right-1, rect.top);
+		pDC->LineTo(rect.left, rect.top);
+	}
+}
+
+COLORREF CGPMgr::GetPenColor(COLORPEN penId)
+{
+	if (penId >= PEN_MAX) return 0;
+
+	return penInfo[penId].color;
+}
+
+
 
 
