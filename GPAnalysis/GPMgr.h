@@ -63,7 +63,7 @@ private:
 
 };
 
-enum ZOOMMODE {ZOOMRESET, ZOOMIN, ZOOMOUT};
+enum ZOOMMODE {ZOOMRESET, ZOOMIN, ZOOMOUT, SHIFTRESET, SHIFTLEFT, SHIFTRIGHT};
 enum COLORPEN {
 	PEN_WHITE, PEN_BLACK, PEN_60DAY, PEN_50DAY,
 	PEN_40DAY, PEN_30DAY, PEN_20DAY, PEN_10DAY,
@@ -85,6 +85,7 @@ public:
 	~CGPMgr();
 
 	void UI_Zoom(ZOOMMODE mode);
+	void UI_MoveDayShift(int dayShift);
 	void Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse);
 
 private:
@@ -92,6 +93,9 @@ private:
 	int m_iScale;
 	int m_iCellWidth;
 	int m_iCellHigh;
+	int m_iDayShift;			// for left/right key adjust day date display
+	int m_iCellOverlap;
+
 
 	CPen m_pens[PEN_MAX];
 	COLORREF GetPenColor(COLORPEN penId);

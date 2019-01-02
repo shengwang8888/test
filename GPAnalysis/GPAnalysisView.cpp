@@ -35,13 +35,15 @@ BEGIN_MESSAGE_MAP(CGPAnalysisView, CView)
 	ON_MESSAGE(WM_USER_SHOW_GP, &CGPAnalysisView::OnAnalysisSingleGP)
 ON_WM_KEYDOWN()
 ON_WM_MOUSEMOVE()
+ON_WM_LBUTTONDOWN()
+ON_WM_LBUTTONUP()
 END_MESSAGE_MAP()
 
 // CGPAnalysisView construction/destruction
 
 CGPAnalysisView::CGPAnalysisView()
 {
-	// TODO: add construction code here
+	m_bMouseLeftDown = false;
 
 }
 
@@ -186,8 +188,10 @@ void CGPAnalysisView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	switch (nChar)
 	{
 	case VK_LEFT:
+		gpMgr.UI_Zoom(SHIFTLEFT);
 		break;
 	case VK_RIGHT:
+		gpMgr.UI_Zoom(SHIFTRIGHT);
 		break;
 	case VK_UP:
 		gpMgr.UI_Zoom(ZOOMIN);
@@ -205,8 +209,35 @@ void CGPAnalysisView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 
 void CGPAnalysisView::OnMouseMove(UINT nFlags, CPoint point)
 {
+	if (m_bMouseLeftDown)
+	{
+		gpMgr.UI_MoveDayShift(point.x - m_ptMouse.x);
+	}
+
 	m_ptMouse = point;
 	Invalidate(0);
 
 	CView::OnMouseMove(nFlags, point);
+}
+
+
+void CGPAnalysisView::OnLButtonDown(UINT nFlags, CPoint point)
+{
+	m_bMouseLeftDown = true;
+	m_ptMouse = point;
+
+	SetCapture();
+
+	CView::OnLButtonDown(nFlags, point);
+}
+
+
+void CGPAnalysisView::OnLButtonUp(UINT nFlags, CPoint point)
+{
+	ReleaseCapture();
+
+	m_bMouseLeftDown = false;
+
+
+	CView::OnLButtonUp(nFlags, point);
 }

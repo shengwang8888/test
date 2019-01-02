@@ -243,6 +243,9 @@ CGPMgr::CGPMgr()
 {
 	m_iCellWidth = 10;
 	m_iCellHigh  = 30;
+	m_iDayShift  = 0;
+	m_iCellOverlap = 0;
+
 
 	for (int i = 0; i < PEN_MAX; i++)
 	{
@@ -269,8 +272,29 @@ void CGPMgr::UI_Zoom(ZOOMMODE mode)
 	case ZOOMOUT:
 		m_iScale--;
 		break;
+
+	case SHIFTRESET:
+		m_iDayShift = 0;
+		break;
+	case SHIFTLEFT:
+		m_iDayShift+= m_iCellOverlap+1;
+		break;
+	case SHIFTRIGHT:
+		m_iDayShift-= m_iCellOverlap+1;
+		if (m_iDayShift < 0) m_iDayShift = 0;
+		break;
 	}
 }
+
+void CGPMgr::UI_MoveDayShift(int dayShift)
+{
+	m_iDayShift += dayShift * (m_iCellOverlap + 1);
+
+	if (m_iDayShift < 0)
+		m_iDayShift = 0;
+}
+
+
 
 
 
@@ -301,28 +325,43 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse)
 	PDAILYINFO pDailyData = pGP->GetDailyInfoDate();
 	if (pDailyData == NULL) return;
 
-	int cell_overlap = 0;
 	int cell_W = m_iCellWidth + m_iScale * 2;
 	if (cell_W <= 0)
 	{
 		cell_W = 1;
-		cell_overlap = -(m_iCellWidth + m_iScale * 2) / 2;
+		m_iCellOverlap = -(m_iCellWidth + m_iScale * 2) / 2;
 	}
 
 	int maxDay = rcGrain.Width() / cell_W;
-	if (cell_overlap > 0)
-		maxDay *= cell_overlap+1;
+	if (m_iCellOverlap > 0)
+		maxDay *= m_iCellOverlap+1;
 
 	// Draw grain windows
 	PDAILYINFO pSelectedDay = NULL;
 	PDAILYINFO pTmpDat = pDailyData;
+	for (int i = 0; i < maxDay + m_iDayShift; i++)
+	{
+		pTmpDat = pTmpDat->day_prev;
+
+		if (pTmpDat == pDailyData)
+		{
+			if (i < maxDay)
+				m_iDayShift = 0;
+			else
+				m_iDayShift = i - maxDay;
+
+			break;
+		}
+	}
+	pTmpDat = pDailyData;
 
 	int priceMin = 0x7fffffff;
 	int priceMax = 0;
 	int amountMax = 0;
-	for (int i = 0; i < maxDay; i++)
+	for (int i = 0; i < maxDay + m_iDayShift; i++)
 	{
 		pTmpDat = pTmpDat->day_prev;
+		if (i < m_iDayShift) continue;
 
 		if (priceMin > pTmpDat->price_min)
 			priceMin = pTmpDat->price_min;
@@ -333,12 +372,18 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse)
 			amountMax = pTmpDat->deal_amount;
 
 		if (pTmpDat == pDailyData)
+		{
+			if (i < maxDay)
+				m_iDayShift = 0;
+			else
+				m_iDayShift = i - maxDay;
+
 			break;
+		}
 	}
 
 	double hRatePrice = (double)(rcGrain.Height()) / (priceMax - priceMin);
 	double hRateAMount = (double)(rcAMount.Height()) / amountMax;
-	int dayCnt = 0;
 	int overlapCnt = 0;
 	int lastDate = 0;
 
@@ -395,16 +440,18 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse)
 	// Draw grain
 	int cell_X = rcGrain.left;
 	int last_cell_X;
+	int dayCnt = 0;
+
 	do
 	{
 		last_cell_X = cell_X;
 
 		cell_X = rcGrain.left + dayCnt * cell_W;
-		if (cell_X < 0) break;
+		if (cell_X < 0 || cell_X+ cell_W > rcGrain.right) break;
 
-		if (cell_overlap > 0)
+		if (m_iCellOverlap > 0)
 		{
-			if (overlapCnt == cell_overlap)
+			if (overlapCnt == m_iCellOverlap)
 			{
 				overlapCnt = 0;
 				dayCnt++;
