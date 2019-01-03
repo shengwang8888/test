@@ -1,12 +1,15 @@
 #pragma once
 
-#include "lib\\DrawLib.h"
+//#include "lib\\DrawLib.h"
+//
+//#ifdef _DEBUG
+//#pragma comment(lib,"lib\\Drawlib.dbg.lib")
+//#else
+//#pragma comment(lib,"lib\\Drawlib.rls.lib")
+//#endif
 
-#ifdef _DEBUG
-#pragma comment(lib,"lib\\Drawlib.dbg.lib")
-#else
-#pragma comment(lib,"lib\\Drawlib.rls.lib")
-#endif
+#include "GPStrategy.h"
+
 
 enum AVGLINE { LINE5, LINE10, LINE20, LINE30, LINE40, LINE50, LINE60, LINE120
 };
@@ -45,6 +48,10 @@ public:
 
 	PDAILYINFO GetDailyInfoDate();
 
+	int AddStrategy(GPStrategy *pStrategy);
+	void RemoveStrategy(GPStrategy *pStrategy);
+	GPStrategy *GetStrategy(int index);
+	int GetStrategyIdx(GPStrategy *pStrategy);
 
 private:
 	CString name;
@@ -60,7 +67,7 @@ private:
 	BOOL LoadGPFile(LPCSTR strGpFile);
 	void FreeGPFile();
 
-
+	CPtrArray m_arStrategy;
 };
 
 enum ZOOMMODE {ZOOMRESET, ZOOMIN, ZOOMOUT, SHIFTRESET, SHIFTLEFT, SHIFTRIGHT};
@@ -68,7 +75,8 @@ enum COLORPEN {
 	PEN_WHITE, PEN_BLACK, PEN_60DAY, PEN_50DAY,
 	PEN_40DAY, PEN_30DAY, PEN_20DAY, PEN_10DAY,
 	PEN_5DAY, PEN_WIN, PEN_LOSE, PEN_WHITELINE,
-	PEN_REDLINE, PEN_COORDINATEDOT, PEN_COORDINATE, PEN_MAX
+	PEN_REDLINE, PEN_COORDINATEDOT, PEN_COORDINATE, PEN_TRADEWIN, 
+	PEN_TRADELOSE, PEN_MAX
 };
 
 typedef struct _pen_info

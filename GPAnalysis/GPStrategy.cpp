@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "GPStrategy.h"
+#include "GPMgr.h"
 
 
 GPStrategyReport::GPStrategyReport()
@@ -135,13 +136,19 @@ GPStrategy::~GPStrategy()
 
 GPStrategy_6010::GPStrategy_6010()
 {
-	name = "GPStrategy_6010";
+	m_strName = "GPStrategy_6010";
 }
 
 
 GPStrategy_6010::~GPStrategy_6010()
 {
 }
+
+void GPStrategy_6010::getName(CString &name)
+{
+	name = m_strName;
+}
+
 
 bool GPStrategy_6010::do_strategy_analysis(int startDate, int endDate, CGP *pGP)
 {
@@ -162,6 +169,8 @@ bool GPStrategy_6010::do_strategy_analysis(int startDate, int endDate, CGP *pGP)
 
 	if (startDate > endDate)
 		return false;
+
+	m_report.Reset();
 
 	// 01. find startDate
 	while (startDate > pDailyInfo->date)
@@ -208,14 +217,14 @@ bool GPStrategy_6010::do_strategy_analysis(int startDate, int endDate, CGP *pGP)
 		// 02.1 check should I sale out
 		if (bBuyed)
 		{
-			if (pDailyPrev != NULL)
+			if (pDailyPrev != NULL && pTradeInfo->BuyDate != pDailyInfo->date)
 			{
 				if (pDailyInfo->price_close < pDailyPrev->avgLine[LINE10])
 				{
 					bBuyed = false;
 					pTradeInfo->SaleDate = pDailyInfo->date;
 					pTradeInfo->SalePrice = pDailyInfo->price_close;
-					pTradeInfo->Profit = (float)(pTradeInfo->SalePrice - pTradeInfo->BuyPrice) / pTradeInfo->BuyPrice * 10000; // 1x.xx%
+					pTradeInfo->Profit = (int)((float)(pTradeInfo->SalePrice - pTradeInfo->BuyPrice) / pTradeInfo->BuyPrice * 10000); // 1x.xx%
 
 					m_report.AddTradeInfo(pTradeInfo);
 				}
@@ -232,7 +241,7 @@ bool GPStrategy_6010::do_strategy_analysis(int startDate, int endDate, CGP *pGP)
 		bBuyed = false;
 		pTradeInfo->SaleDate = pDailyPrev->date;
 		pTradeInfo->SalePrice = pDailyPrev->price_close;
-		pTradeInfo->Profit = (float)(pTradeInfo->SalePrice - pTradeInfo->BuyPrice) / pTradeInfo->BuyPrice * 10000; // 1x.xx%
+		pTradeInfo->Profit = (int)((float)(pTradeInfo->SalePrice - pTradeInfo->BuyPrice) / pTradeInfo->BuyPrice * 10000); // 1x.xx%
 
 		m_report.AddTradeInfo(pTradeInfo);
 	}

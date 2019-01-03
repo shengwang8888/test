@@ -14,7 +14,7 @@
 
 #include "MainFrm.h"
 #include "GPMgr.h"
-#include "GPStrategy.h"
+
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -167,11 +167,12 @@ LRESULT CGPAnalysisView::OnAnalysisSingleGP(WPARAM wParam, LPARAM lParam)
 
 
 	CGP *pGP = new CGP(pGpFile->GetString());
+	GPStrategy *pStrategy = new GPStrategy_6010;
 
-	GPStrategy_6010 StrategyAnalyer;
-	StrategyAnalyer.do_strategy_analysis(0, 0, pGP);
+	pGP->AddStrategy(pStrategy);
+	pStrategy->do_strategy_analysis(0, 0, pGP);
 
-	GPStrategyReport *pReport = StrategyAnalyer.get_strategy_report();
+	GPStrategyReport *pReport = pStrategy->get_strategy_report();
 	int ret, precent;
 	ret = pReport->GetTotalProfit();
 	ret = pReport->GetLostTimes(&precent);

@@ -1,5 +1,4 @@
 #pragma once
-#include "GPMgr.h"
 
 
 typedef struct _TradeInfo
@@ -32,13 +31,17 @@ private:
 
 
 
+#pragma warning(disable:4091)
+extern class CGP;
 
 class GPStrategy
 {
+
 public:
 	GPStrategy();
 	~GPStrategy();
 
+	virtual void getName(CString &name) = 0;
 	virtual bool do_strategy_analysis(int startDate, int endDate, CGP *pGP) = 0;
 	virtual GPStrategyReport *get_strategy_report() = 0;
 
@@ -46,17 +49,22 @@ protected:
 	GPStrategyReport m_report;
 };
 
+
+
 class GPStrategy_6010 : public GPStrategy
 {
 public:
 	GPStrategy_6010();
 	~GPStrategy_6010();
 
+	virtual void getName(CString &name);
 	virtual bool do_strategy_analysis(int startDate, int endDate, CGP *pGP);
 	virtual GPStrategyReport *get_strategy_report();
 
-public:
-	CString name;
+private:
+	CString m_strName;
 
 };
+
+
 

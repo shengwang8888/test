@@ -204,6 +204,49 @@ void CGP::ClearAll()
 }
 
 
+int CGP::AddStrategy(GPStrategy *pStrategy)
+{
+	int ret = -1;
+	if (pStrategy == NULL) return ret;
+
+	m_arStrategy.Add(pStrategy);
+
+	ret = m_arStrategy.GetCount() - 1;
+
+	return ret;
+}
+
+void CGP::RemoveStrategy(GPStrategy *pStrategy)
+{
+	for (int i = 0; i < m_arStrategy.GetCount(); i++)
+	{
+		if (m_arStrategy.GetAt(i) == (void *)pStrategy)
+		{
+			m_arStrategy.RemoveAt(i);
+		}
+	}
+
+}
+
+GPStrategy *CGP::GetStrategy(int index)
+{
+	if (index >= m_arStrategy.GetCount())
+		return 0;
+
+	return (GPStrategy *)m_arStrategy.GetAt(index);
+}
+
+int CGP::GetStrategyIdx(GPStrategy *pStrategy)
+{
+	for (int i = 0; i < m_arStrategy.GetCount(); i++)
+	{
+		if (m_arStrategy.GetAt(i) == (void *)pStrategy)
+			return i;
+	}
+
+	return -1;
+}
+
 
 ///////////////////////////////////////// GP Manager /////////////////////////////////////////
 CGPMgr  gpMgr;
@@ -213,7 +256,8 @@ CGPMgr  gpMgr;
 //	PEN_WHITE, PEN_BLACK, PEN_60DAY, PEN_50DAY,
 //	PEN_40DAY, PEN_30DAY, PEN_20DAY, PEN_10DAY,
 //	PEN_5DAY, PEN_WIN, PEN_LOSE, PEN_WHITELINE,
-//	PEN_REDLINE, PEN_COORDINATEDOT, PEN_COORDINATE, PEN_MAX
+//	PEN_REDLINE, PEN_COORDINATEDOT, PEN_COORDINATE, PEN_TRADEWIN, 
+//  PEN_TRADELOSE, PEN_MAX
 //};
 
 
@@ -236,6 +280,9 @@ PEN_INFO penInfo[] = {
 	{PS_SOLID, 1, RGB(255, 50, 50)},
 	{PS_DOT,   1, RGB(176, 0, 0)},
 	{PS_SOLID, 1, RGB(176, 0, 0)},
+	{PS_SOLID, 2, RGB(136, 50, 50)},			// trade win
+
+	{PS_SOLID, 2, RGB(110, 150, 190)},			// trade lost
 };
 
 
@@ -324,6 +371,15 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse)
 
 	PDAILYINFO pDailyData = pGP->GetDailyInfoDate();
 	if (pDailyData == NULL) return;
+
+	PTRADEINFO        pTradeInfo = NULL;
+	PTRADEINFO        pTradeTemp = NULL;
+	bool              bTradeArea = false;
+
+	GPStrategyReport *pStrategyReport = NULL;
+	GPStrategy       *pStrategy       = pGP->GetStrategy(0);
+	if(pStrategy)
+		pStrategyReport = pStrategy->get_strategy_report();
 
 	int cell_W = m_iCellWidth + m_iScale * 2;
 	if (cell_W <= 0)
@@ -437,7 +493,7 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse)
 
 	}
 
-	// Draw grain
+	
 	int cell_X = rcGrain.left;
 	int last_cell_X;
 	int dayCnt = 0;
@@ -461,6 +517,72 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse)
 		}
 		else
 			dayCnt++;
+
+
+		// Draw strategy trade area
+		#pragma region Draw_Trade_area
+
+		if (pStrategyReport)
+		{
+			static CPoint ptTradeStart;
+
+			for (int i = 0; i < pStrategyReport->GetTradeTimes(); i++)
+			{
+				pTradeTemp = pStrategyReport->GetTradeInfo(i);
+
+				if (pTradeTemp->BuyDate == pTmpDat->date)
+				{
+					bTradeArea = true;
+					pTradeInfo = pTradeTemp;
+					ptTradeStart.x = cell_X;
+					ptTradeStart.y = rcGrain.top;
+					break;
+				}
+				if (pTradeTemp->SaleDate == pTmpDat->date)
+				{
+					if (bTradeArea)
+					{
+						CString str;
+
+						if (pTradeInfo->Profit > 0)
+							pDC->SetTextColor(GetPenColor(PEN_TRADELOSE));
+						else
+							pDC->SetTextColor(GetPenColor(PEN_TRADEWIN));
+
+						str.Format("%d, buy: %.2f", pTradeInfo->BuyDate, (float)pTradeInfo->BuyPrice / 100);
+						pDC->TextOutA(ptTradeStart.x, ptTradeStart.y, str);
+						str.Format("%d, sale:%.2f", pTradeInfo->SaleDate, (float)pTradeInfo->SalePrice / 100);
+						pDC->TextOutA(ptTradeStart.x, ptTradeStart.y+12, str);
+						str.Format("profit: %.2f%%", (float)pTradeInfo->Profit / 100);
+						pDC->TextOutA(ptTradeStart.x, ptTradeStart.y+24, str);
+					}
+
+					bTradeArea = false;
+
+					break;
+				}
+			}
+
+			if (bTradeArea)
+			{
+				if (pTradeInfo->Profit > 0)
+					penColor = PEN_TRADEWIN;
+				else
+					penColor = PEN_TRADELOSE;
+
+				rcTmp = CRect(
+					cell_X,
+					rcGrain.top,
+					cell_X + cell_W,
+					rcGrain.bottom-1);
+
+				FillColorRect(pDC, rcTmp, penColor, penColor);
+			}
+
+
+		}
+		#pragma endregion
+
 
 		if (pTmpDat->price_close > pTmpDat->price_open)
 		{
@@ -507,6 +629,7 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse)
 			pt2 = CPoint(cell_X + (cell_W - 1) / 2, rcGrain.bottom - (int)((pTmpDat->price_min - priceMin)*hRatePrice));
 		}
 
+		// Draw grain
 		DrawColorLine(pDC, pt1, pt2, penColor);
 		if (bRising)
 			FillColorRect(pDC, rcTmp, penColor, PEN_BLACK);
