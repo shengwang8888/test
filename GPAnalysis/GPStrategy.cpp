@@ -188,23 +188,17 @@ bool GPStrategy_6010::do_strategy_analysis(int startDate, int endDate, CGP *pGP)
 			if (pDailyPrev != NULL)
 			{
 				if (pDailyPrev->price_close < pDailyPrev->avgLine[LINE60] &&
-					pDailyInfo->price_close > pDailyInfo->avgLine[LINE60] + pDailyInfo->avgLine[LINE60] * 0.01)
+					pDailyInfo->price_close > pDailyPrev->avgLine[LINE60] * 1.01)
 				{
 					bBuyed = true;
 					pTradeInfo = new TRADEINFO;
 					pTradeInfo->BuyDate = pDailyInfo->date;
 					pTradeInfo->BuyPrice = pDailyInfo->price_close;
 				}
-			}
-		}
-		if (!bBuyed)
-		{
-			if (pDailyPrev != NULL)
-			{
-				if (pDailyInfo->avgLine[LINE10] > pDailyInfo->avgLine[LINE60] &&
+				else if (pDailyInfo->avgLine[LINE10] > pDailyInfo->avgLine[LINE60] &&
 					pDailyPrev->price_close < pDailyPrev->avgLine[LINE10] && pDailyInfo->price_close > pDailyInfo->avgLine[LINE10] &&
 					pDailyPrev->avgLine[LINE10] * 1.2 < pDailyPrev->avgLine[LINE60] &&
-					pDailyInfo->price_close > pDailyInfo->avgLine[LINE60] + pDailyInfo->avgLine[LINE60] * 0.01)
+					pDailyInfo->price_close > pDailyInfo->avgLine[LINE60] * 1.01)
 				{
 					bBuyed = true;
 					pTradeInfo = new TRADEINFO;
@@ -213,6 +207,7 @@ bool GPStrategy_6010::do_strategy_analysis(int startDate, int endDate, CGP *pGP)
 				}
 			}
 		}
+
 
 		// 02.1 check should I sale out
 		if (bBuyed)
@@ -254,3 +249,111 @@ GPStrategyReport *GPStrategy_6010::get_strategy_report()
 	return &m_report;
 }
 
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+GPStrategy_60P5::GPStrategy_60P5()
+{
+	m_strName = "GPStrategy_60P5";
+}
+
+
+GPStrategy_60P5::~GPStrategy_60P5()
+{
+}
+
+void GPStrategy_60P5::getName(CString &name)
+{
+	name = m_strName;
+}
+
+
+bool GPStrategy_60P5::do_strategy_analysis(int startDate, int endDate, CGP *pGP)
+{
+	PDAILYINFO	pDailyInfo, pDailyPrev;
+	PTRADEINFO	pTradeInfo;
+	bool		bBuyed = false;
+
+	if (pGP == NULL)
+		return false;
+
+	pDailyInfo = pGP->GetDailyInfoDate();
+	pDailyPrev = NULL;
+
+	if (startDate == 0)
+		startDate = pDailyInfo->date;
+	if (endDate == 0)
+		endDate = pDailyInfo->day_prev->date;
+
+	if (startDate > endDate)
+		return false;
+
+	m_report.Reset();
+
+	// 01. find startDate
+	while (startDate > pDailyInfo->date)
+	{
+		pDailyInfo = pDailyInfo->day_next;
+		if (pDailyInfo == NULL) break;
+	}
+
+	// 02. calculate Strategy until to endDate
+	while (endDate > pDailyInfo->date)
+	{
+		// 02.1 check should I buy in
+		if (!bBuyed)
+		{
+			if (pDailyPrev != NULL)
+			{
+				if (pDailyPrev->price_close < pDailyPrev->avgLine[LINE60] &&
+					pDailyInfo->price_close > pDailyPrev->avgLine[LINE60] + pDailyPrev->avgLine[LINE60] * 0.01)
+				{
+					bBuyed = true;
+					pTradeInfo = new TRADEINFO;
+					pTradeInfo->BuyDate = pDailyInfo->date;
+					pTradeInfo->BuyPrice = pDailyInfo->price_close;
+				}
+			}
+		}
+
+		// 02.1 check should I sale out
+		if (bBuyed)
+		{
+			if (pDailyPrev != NULL && pTradeInfo->BuyDate != pDailyInfo->date)
+			{
+				if ((pDailyInfo->price_close < pDailyPrev->avgLine[LINE10]) ||
+					(pDailyInfo->price_close - pTradeInfo->BuyPrice > pTradeInfo->BuyPrice * 1.05))    // earn 5%
+				{
+					bBuyed = false;
+					pTradeInfo->SaleDate = pDailyInfo->date;
+					pTradeInfo->SalePrice = pDailyInfo->price_close;
+					pTradeInfo->Profit = (int)((float)(pTradeInfo->SalePrice - pTradeInfo->BuyPrice) / pTradeInfo->BuyPrice * 10000); // 1x.xx%
+
+					m_report.AddTradeInfo(pTradeInfo);
+				}
+			}
+		}
+
+		pDailyPrev = pDailyInfo;
+		pDailyInfo = pDailyInfo->day_next;
+		if (pDailyInfo == NULL) break;
+	}
+
+	if (bBuyed)
+	{
+		bBuyed = false;
+		pTradeInfo->SaleDate = pDailyPrev->date;
+		pTradeInfo->SalePrice = pDailyPrev->price_close;
+		pTradeInfo->Profit = (int)((float)(pTradeInfo->SalePrice - pTradeInfo->BuyPrice) / pTradeInfo->BuyPrice * 10000); // 1x.xx%
+
+		m_report.AddTradeInfo(pTradeInfo);
+	}
+
+	return true;
+}
+
+GPStrategyReport *GPStrategy_60P5::get_strategy_report()
+{
+	return &m_report;
+}
