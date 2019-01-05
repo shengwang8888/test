@@ -20,6 +20,7 @@ public:
 
 // Operations
 public:
+	CWnd *GetOutWindow();
 
 // Overrides
 public:

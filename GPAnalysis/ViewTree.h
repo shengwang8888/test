@@ -31,4 +31,5 @@ public:
 	afx_msg void OnExplorerExportall();
 	afx_msg void OnExplorerAnalysis();
 	afx_msg void OnExplorerAnalysisall();
+	afx_msg void OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
 };

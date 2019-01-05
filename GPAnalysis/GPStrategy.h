@@ -39,7 +39,7 @@ class GPStrategy
 
 public:
 	GPStrategy();
-	~GPStrategy();
+	virtual ~GPStrategy();
 
 	virtual void getName(CString &name) = 0;
 	virtual bool do_strategy_analysis(int startDate, int endDate, CGP *pGP) = 0;
@@ -55,7 +55,7 @@ class GPStrategy_6010 : public GPStrategy
 {
 public:
 	GPStrategy_6010();
-	~GPStrategy_6010();
+	virtual ~GPStrategy_6010();
 
 	virtual void getName(CString &name);
 	virtual bool do_strategy_analysis(int startDate, int endDate, CGP *pGP);
@@ -71,7 +71,7 @@ class GPStrategy_60P5 : public GPStrategy
 {
 public:
 	GPStrategy_60P5();
-	~GPStrategy_60P5();
+	virtual ~GPStrategy_60P5();
 
 	virtual void getName(CString &name);
 	virtual bool do_strategy_analysis(int startDate, int endDate, CGP *pGP);

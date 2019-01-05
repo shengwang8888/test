@@ -22,6 +22,14 @@ CGP::CGP(LPCSTR strGpFile)
 CGP::~CGP()
 {
 	Remove_from_GpList();
+
+	for (int i = 0; i < m_arStrategy.GetCount(); i++)
+	{
+		GPStrategy  *pStrategy = (GPStrategy  *)m_arStrategy.GetAt(i);
+		delete pStrategy;
+	}
+	m_arStrategy.RemoveAll();
+
 }
 
 void CGP::Add_to_GpList()
@@ -77,9 +85,9 @@ BOOL CGP::LoadGPFile(LPCSTR strGpFile)
 {
 	CFile     fp;
 	DAILYINFO dailyInfo;
-	DAILYINFO *pHead;
-	int       dayVal[120];
-	int       maxDay = sizeof(dayVal) / sizeof(dayVal[0]);
+	DAILYINFO *pTail;
+	int       dayVal[2][120];
+	int       maxDay = sizeof(dayVal) / sizeof(dayVal[0][0]) / 2;
 	int       dayCnt = 0;
 	int       i;
 
@@ -104,18 +112,18 @@ BOOL CGP::LoadGPFile(LPCSTR strGpFile)
 			if (m_pDailyDate == NULL)
 			{
 				m_pDailyDate = pData;
-				pHead = m_pDailyDate;
-				pHead->day_prev = m_pDailyDate;
+				pTail = m_pDailyDate;
+				pTail->day_prev = m_pDailyDate;
 			}
 			else
 			{
-				pHead->day_next = pData;
-				pData->day_prev = pHead;
+				pTail->day_next = pData;
+				pData->day_prev = pTail;
 
-				pHead = pData;
+				pTail = pData;
 			}
 
-			m_pDailyDate->day_prev = pHead;
+			m_pDailyDate->day_prev = pTail;
 			//pHead->day_next = m_pDailyDate;
 
 
@@ -123,10 +131,15 @@ BOOL CGP::LoadGPFile(LPCSTR strGpFile)
 			if (dayCnt == 0)
 			{
 				// init all data
-				for (i = 0; i < maxDay; i++) dayVal[i] = pData->price_close;
+				for (i = 0; i < maxDay; i++)
+				{
+					dayVal[0][i] = pData->price_close;
+					dayVal[1][i] = pData->deal_amount;
+				}
 			}
 
-			dayVal[dayCnt%maxDay] = pData->price_close;
+			dayVal[0][dayCnt%maxDay] = pData->price_close;
+			dayVal[1][dayCnt%maxDay] = pData->deal_amount;
 
 			for (i = 0; i < maxDay; i++)
 			{
@@ -134,14 +147,24 @@ BOOL CGP::LoadGPFile(LPCSTR strGpFile)
 
 				if (datPos < 0) datPos += maxDay;
 
-				if (i < 5)  pData->avgLine[LINE5] += dayVal[datPos];
-				if (i < 10) pData->avgLine[LINE10] += dayVal[datPos];
-				if (i < 20) pData->avgLine[LINE20] += dayVal[datPos];
-				if (i < 30) pData->avgLine[LINE30] += dayVal[datPos];
-				if (i < 40) pData->avgLine[LINE40] += dayVal[datPos];
-				if (i < 50) pData->avgLine[LINE50] += dayVal[datPos];
-				if (i < 60) pData->avgLine[LINE60] += dayVal[datPos];
-				if (i < 120) pData->avgLine[LINE120] += dayVal[datPos];
+				if (i < 5)  pData->avgLine[LINE5] += dayVal[0][datPos];
+				if (i < 10) pData->avgLine[LINE10] += dayVal[0][datPos];
+				if (i < 20) pData->avgLine[LINE20] += dayVal[0][datPos];
+				if (i < 30) pData->avgLine[LINE30] += dayVal[0][datPos];
+				if (i < 40) pData->avgLine[LINE40] += dayVal[0][datPos];
+				if (i < 50) pData->avgLine[LINE50] += dayVal[0][datPos];
+				if (i < 60) pData->avgLine[LINE60] += dayVal[0][datPos];
+				if (i < 120) pData->avgLine[LINE120] += dayVal[0][datPos];
+
+				if (i < 5)  pData->avgAmount[LINE5] += dayVal[1][datPos];
+				if (i < 10) pData->avgAmount[LINE10] += dayVal[1][datPos];
+				if (i < 20) pData->avgAmount[LINE20] += dayVal[1][datPos];
+				if (i < 30) pData->avgAmount[LINE30] += dayVal[1][datPos];
+				if (i < 40) pData->avgAmount[LINE40] += dayVal[1][datPos];
+				if (i < 50) pData->avgAmount[LINE50] += dayVal[1][datPos];
+				if (i < 60) pData->avgAmount[LINE60] += dayVal[1][datPos];
+				if (i < 120) pData->avgAmount[LINE120] += dayVal[1][datPos];
+
 			}
 
 			pData->avgLine[LINE5] /= 5;
@@ -152,6 +175,18 @@ BOOL CGP::LoadGPFile(LPCSTR strGpFile)
 			pData->avgLine[LINE50] /= 50;
 			pData->avgLine[LINE60] /= 60;
 			pData->avgLine[LINE120] /= 120;
+
+			pData->avgAmount[LINE5] /= 5;
+			pData->avgAmount[LINE10] /= 10;
+			pData->avgAmount[LINE20] /= 20;
+			pData->avgAmount[LINE30] /= 30;
+			pData->avgAmount[LINE40] /= 40;
+			pData->avgAmount[LINE50] /= 50;
+			pData->avgAmount[LINE60] /= 60;
+			pData->avgAmount[LINE120] /= 120;
+
+			pData->profit = (int)((float)(pData->price_close - pData->price_open) / pData->price_open * 10000);
+
 
 			dayCnt++;
 		}
@@ -223,9 +258,11 @@ void CGP::RemoveStrategy(GPStrategy *pStrategy)
 		if (m_arStrategy.GetAt(i) == (void *)pStrategy)
 		{
 			m_arStrategy.RemoveAt(i);
+			delete pStrategy;
+
+			break;
 		}
 	}
-
 }
 
 GPStrategy *CGP::GetStrategy(int index)
@@ -354,6 +391,7 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse)
 	CRect rcAMount = rcMainWnd;
 	CRect rcPriceLeft = rcMainWnd;
 	CRect rcDate = rcMainWnd;
+	CRect rcDayInfo;
 
 	rcGrain.top = rcGrain.top + 10;
 	rcGrain.right = rcGrain.right - 50;
@@ -364,6 +402,10 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse)
 
 	rcAMount.top = rcGrain.bottom + 10;
 	rcAMount.bottom = rcMainWnd.bottom - 18;
+
+	rcDayInfo = rcAMount;
+	rcDayInfo.top = rcGrain.bottom;
+	rcDayInfo.right = rcDayInfo.left + 200;
 
 	rcDate.top = rcAMount.bottom +2;
 
@@ -488,7 +530,6 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse)
 
 			strPrice.Format("%.2f", (double)(priceMin+ priceStep*i)/100);
 			pDC->TextOutA(rcGrain.right + 6, yPos - 8, strPrice);
-			//pDC->ExtTextOutA( )
 		}
 
 	}
@@ -544,10 +585,11 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse)
 					{
 						CString str;
 
-						if (pTradeInfo->Profit > 0)
-							pDC->SetTextColor(GetPenColor(PEN_TRADELOSE));
-						else
-							pDC->SetTextColor(GetPenColor(PEN_TRADEWIN));
+						//if (pTradeInfo->Profit > 0)
+						//	pDC->SetTextColor(GetPenColor(PEN_TRADELOSE));
+						//else
+						//	pDC->SetTextColor(GetPenColor(PEN_TRADEWIN));
+						pDC->SetTextColor(RGB(220,220,0));
 
 						str.Format("%d, buy: %.2f", pTradeInfo->BuyDate, (float)pTradeInfo->BuyPrice / 100);
 						pDC->TextOutA(ptTradeStart.x, ptTradeStart.y, str);
@@ -608,15 +650,24 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse)
 		}
 		else
 		{
-			bRising = TRUE;
+			if (pTmpDat->price_max == pTmpDat->price_min)
+			{
+				if (pTmpDat->price_max > pTmpDat->day_prev->price_close)
+					bRising = TRUE;
+				else
+					bRising = FALSE;
+			}
+			else
+				bRising = TRUE;
 
-			penColor = PEN_WIN;
+			penColor = bRising ? PEN_WIN : PEN_LOSE;
 			rcTmp = CRect(
 				cell_X,
 				rcGrain.bottom - (int)((pTmpDat->price_close - priceMin)*hRatePrice),
 				cell_X + ((cell_W - 1) == 0 ? 1 : cell_W - 1),
 				rcGrain.bottom - (int)((pTmpDat->price_open - priceMin)*hRatePrice - 1));
 		}
+		if (rcTmp.bottom == rcTmp.top) rcTmp.bottom = rcTmp.top + 1;
 
 		if (cell_W <= 2)
 		{
@@ -689,6 +740,36 @@ void CGPMgr::Draw_GP_UI(CDC *pDC, CRect &rcMainWnd, CPoint &ptMouse)
 
 	} while (pTmpDat != pDailyData && pTmpDat != NULL );
 
+
+	// Draw day date info
+	if (pSelectedDay)
+	{
+		FillColorRect(pDC, rcDayInfo, PEN_REDLINE, PEN_BLACK);
+		pDC->SetTextColor(GetPenColor(PEN_REDLINE));
+		strDate.Format("Date:   %d", pSelectedDay->date);
+		pDC->TextOutA(rcDayInfo.left + 1, rcDayInfo.top, strDate);
+		strDate.Format("Open:   %.2f", (float)pSelectedDay->price_open / 100);
+		pDC->TextOutA(rcDayInfo.left + 1, rcDayInfo.top + 12, strDate);
+
+		strDate.Format("Close:  %.2f", (float)pSelectedDay->price_close / 100);
+		pDC->TextOutA(rcDayInfo.left + 1, rcDayInfo.top + 24, strDate);
+
+		strDate.Format("Max:    %.2f", (float)pSelectedDay->price_max / 100);
+		pDC->TextOutA(rcDayInfo.left + 1, rcDayInfo.top + 36, strDate);
+
+		strDate.Format("Min:    %.2f", (float)pSelectedDay->price_min / 100);
+		pDC->TextOutA(rcDayInfo.left + 1, rcDayInfo.top + 48, strDate);
+
+		strDate.Format("Profit: %.2f%%", (float)(pSelectedDay->price_close - pSelectedDay->price_open) / pSelectedDay->price_open * 100);
+		pDC->TextOutA(rcDayInfo.left + 1, rcDayInfo.top + 60, strDate);
+
+		strDate.Format("TOR:    %.2f%%", (float)(pSelectedDay->deal_amount) / pSelectedDay->res0 * 100);
+		pDC->TextOutA(rcDayInfo.left + 1, rcDayInfo.top + 72, strDate);
+
+		strDate.Format("AMount: %.2f%%", (float)(pSelectedDay->deal_amount) / pSelectedDay->day_prev->avgAmount[LINE20] * 100);
+		pDC->TextOutA(rcDayInfo.left + 1, rcDayInfo.top + 84, strDate);
+
+	}
 
 
 	// Draw mouse line

@@ -167,16 +167,43 @@ LRESULT CGPAnalysisView::OnAnalysisSingleGP(WPARAM wParam, LPARAM lParam)
 
 
 	CGP *pGP = new CGP(pGpFile->GetString());
-	GPStrategy *pStrategy = new GPStrategy_6010;
+	GPStrategy *pStrategy = new GPStrategy_60P5;
 
 	pGP->AddStrategy(pStrategy);
 	pStrategy->do_strategy_analysis(0, 0, pGP);
 
 	GPStrategyReport *pReport = pStrategy->get_strategy_report();
 	int ret, precent;
+	CString str;
+
+	SendOutputWndMsg(0, MSGTYPE_CLEAR, 0);
+	SendOutputWndMsg(0, MSGTYPE_ADD, (LPCSTR)pGpFile->GetString());
+
 	ret = pReport->GetTotalProfit();
-	ret = pReport->GetLostTimes(&precent);
+	str.Format("Total profit: %.2f", (float)ret/100);
+	SendOutputWndMsg(0, MSGTYPE_ADD, (LPCSTR)str);
+
 	ret = pReport->GetWinTimes(&precent);
+	str.Format("Total win times:  %d, profit: %.2f", ret, (float)precent / 100);
+	SendOutputWndMsg(0, MSGTYPE_ADD, (LPCSTR)str);
+
+	ret = pReport->GetLostTimes(&precent);
+	str.Format("Total lose times: %d, profit: %.2f", ret, (float)precent / 100);
+	SendOutputWndMsg(0, MSGTYPE_ADD, (LPCSTR)str);
+
+	for (int i = 0; i < pReport->GetTradeTimes(); i++)
+	{
+		TRADEINFO *pTradeInfo = pReport->GetTradeInfo(i);
+		str.Format("%d %d buy  %.2f", i, pTradeInfo->BuyDate, (float)pTradeInfo->BuyPrice / 100);
+		SendOutputWndMsg(0, MSGTYPE_ADD, (LPCSTR)str);
+
+		str.Format("   %d sale %.2f, profit: %.2f", pTradeInfo->SaleDate, (float)pTradeInfo->SalePrice / 100, (float)pTradeInfo->Profit / 100);
+		SendOutputWndMsg(0, MSGTYPE_ADD, (LPCSTR)str);
+	}
+
+
+
+
 
 	Invalidate(0);
 

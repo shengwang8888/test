@@ -25,7 +25,7 @@
 
 
 #include <afxdisp.h>        // MFC Automation classes
-#include "IniSetting.h"
+#include "Setting.h"
 
 
 

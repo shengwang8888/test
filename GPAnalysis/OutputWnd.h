@@ -3,6 +3,11 @@
 
 /////////////////////////////////////////////////////////////////////////////
 // COutputList window
+#define MSGTYPE_CLEAR 0
+#define MSGTYPE_ADD 1
+
+void SendOutputWndMsg(int wndId, int msgType, LPCSTR msg);
+
 
 class COutputList : public CListBox
 {
@@ -53,6 +58,8 @@ public:
 protected:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
+	afx_msg LRESULT OnOutputWndMsg(WPARAM wParam, LPARAM lParam);
+
 
 	DECLARE_MESSAGE_MAP()
 };

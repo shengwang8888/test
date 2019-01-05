@@ -428,3 +428,9 @@ void CMainFrame::OnTimer(UINT_PTR nIDEvent)
 
 	CFrameWndEx::OnTimer(nIDEvent);
 }
+
+CWnd *CMainFrame::GetOutWindow()
+{
+	return &m_wndOutput;
+}
+

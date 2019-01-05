@@ -29,6 +29,7 @@ BEGIN_MESSAGE_MAP(CViewTree, CTreeCtrl)
 	ON_COMMAND(ID_EXPLORER_EXPORTALL, &CViewTree::OnExplorerExportall)
 	ON_COMMAND(ID_EXPLORER_ANALYSIS, &CViewTree::OnExplorerAnalysis)
 	ON_COMMAND(ID_EXPLORER_ANALYSISALL, &CViewTree::OnExplorerAnalysisall)
+	ON_WM_KEYUP()
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -126,4 +127,24 @@ void CViewTree::OnExplorerAnalysis()
 void CViewTree::OnExplorerAnalysisall()
 {
 	// TODO: Add your command handler code here
+}
+
+
+void CViewTree::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	CString   strFullName;
+	int       imgType;
+
+	if (nChar == VK_RETURN)
+	{
+		GetSelectedFullName(strFullName, imgType);
+
+		if (imgType != 0)
+		{
+			CMainFrame* pMainWnd = (CMainFrame *)(AfxGetApp()->GetMainWnd());
+			::SendMessage(pMainWnd->GetActiveView()->m_hWnd, WM_USER_SHOW_GP, (WPARAM)&strFullName, 0);
+		}
+	}
+
+	CTreeCtrl::OnKeyUp(nChar, nRepCnt, nFlags);
 }

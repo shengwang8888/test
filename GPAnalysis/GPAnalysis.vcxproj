@@ -133,6 +133,7 @@
     <ClInclude Include="GPAnalysisView.h" />
     <ClInclude Include="GPMgr.h" />
     <ClInclude Include="GPStrategy.h" />
+    <ClInclude Include="GPStrategy_BP.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="OutputWnd.h" />
     <ClInclude Include="PropertiesWnd.h" />
@@ -150,6 +151,7 @@
     <ClCompile Include="GPAnalysisView.cpp" />
     <ClCompile Include="GPMgr.cpp" />
     <ClCompile Include="GPStrategy.cpp" />
+    <ClCompile Include="GPStrategy_BP.cpp" />
     <ClCompile Include="MainFrm.cpp" />
     <ClCompile Include="OutputWnd.cpp" />
     <ClCompile Include="PropertiesWnd.cpp" />

@@ -25,6 +25,8 @@ COutputWnd::~COutputWnd()
 BEGIN_MESSAGE_MAP(COutputWnd, CDockablePane)
 	ON_WM_CREATE()
 	ON_WM_SIZE()
+	ON_MESSAGE(WM_USER_OUTPUTWND_MSG, &COutputWnd::OnOutputWndMsg)
+
 END_MESSAGE_MAP()
 
 int COutputWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
@@ -132,6 +134,40 @@ void COutputWnd::UpdateFonts()
 	m_wndOutputBuild.SetFont(&afxGlobalData.fontRegular);
 	m_wndOutputDebug.SetFont(&afxGlobalData.fontRegular);
 	m_wndOutputFind.SetFont(&afxGlobalData.fontRegular);
+}
+
+LRESULT COutputWnd::OnOutputWndMsg(WPARAM wParam, LPARAM lParam)
+{
+	int wndId   = wParam >> 16;
+	int msgType = wParam && 0xffff;
+	LPCSTR msg  = (LPCSTR)lParam;
+
+	COutputList *pWnd[] = { &m_wndOutputBuild, &m_wndOutputDebug, &m_wndOutputFind };
+	int wndCount = sizeof(pWnd) / sizeof(COutputList *);
+
+	if (wndId >= wndCount) return -1;
+
+	if (msgType == MSGTYPE_CLEAR)
+	{
+		pWnd[wndId]->ResetContent();
+	}
+	else if (msgType == MSGTYPE_ADD)
+	{
+		pWnd[wndId]->AddString(msg);
+	}
+
+	return 0;
+}
+
+void SendOutputWndMsg(int wndId, int msgType, LPCSTR msg)
+{
+	WPARAM wParam = (wndId << 16) | (msgType & 0xffff);
+	LPARAM lParam = (LPARAM)msg;
+
+	CMainFrame     *pWnd = (CMainFrame *)AfxGetMainWnd();
+
+	::SendMessage(pWnd->GetOutWindow()->GetSafeHwnd(), WM_USER_OUTPUTWND_MSG, wParam, lParam);
+
 }
 
 /////////////////////////////////////////////////////////////////////////////
